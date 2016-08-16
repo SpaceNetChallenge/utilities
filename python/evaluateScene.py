@@ -40,12 +40,12 @@ if __name__ == "__main__":
     test_image_ids = set([item['ImageId'] for item in prop_polys if item['ImageId'] > 0])
     prop_polysIdList = np.asarray([item['ImageId'] for item in prop_polys if item["ImageId"] > 0 and \
                                    item['BuildingId']!=-1])
-    prop_polysPoly = np.asarray([item['poly'] for item in prop_polys if item["ImageId"] > 0and \
+    prop_polysPoly = np.asarray([item['poly'] for item in prop_polys if item["ImageId"] > 0 and \
                                    item['BuildingId']!=-1])
 
-    sol_polysIdsList = np.asarray([item['ImageId'] for item in sol_polys if item["ImageId"] > 0and \
+    sol_polysIdsList = np.asarray([item['ImageId'] for item in sol_polys if item["ImageId"] > 0 and \
                                    item['BuildingId']!=-1])
-    sol_polysPoly = np.asarray([item['poly'] for item in sol_polys if item["ImageId"] > 0and \
+    sol_polysPoly = np.asarray([item['poly'] for item in sol_polys if item["ImageId"] > 0 and \
                                    item['BuildingId']!=-1])
     bad_count = 0
     F1ScoreList = []
