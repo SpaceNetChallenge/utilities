@@ -4,6 +4,7 @@ import numpy as np
 import os
 import csv
 import rtree
+import subprocess
 
 
 def importgeojson(geojsonfilename, removeNoBuildings=False):
@@ -401,7 +402,7 @@ def clipShapeFile(shapeSrc, outputFileName, polyToCut):
 
 
 def cutChipFromMosaic(rasterFile, shapeFileSrc, outlineSrc,outputDirectory='', outputPrefix='clip_',
-                      clipSizeMX=100, clipSizeMY=100, numBands=8):
+                      clipSizeMX=100, clipSizeMY=100):
     #rasterFile = '/Users/dlindenbaum/dataStorage/spacenet/mosaic_8band/013022223103.tif'
     srcImage = gdal.Open(rasterFile)
     geoTrans, poly, ulX, ulY, lrX, lrY = getRasterExtent(srcImage)
