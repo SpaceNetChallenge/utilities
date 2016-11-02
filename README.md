@@ -17,4 +17,4 @@ The evaluation metric for this competition is an F1 score with the matching algo
 There is at most one “true positive” per labeled polygon.
 The measure of proximity between labeled polygons and proposed polygons is the Jaccard similarity or the “Intersection over Union (IoU)”, defined as:
 
-![alt text](https://github.com/SpaceNetChallenge/utilities/blob/master/LICENSE/conent/IoU.jpg "IoU")
+![alt text](https://github.com/SpaceNetChallenge/utilities/blob/master/content/IoU.jpg "IoU")
