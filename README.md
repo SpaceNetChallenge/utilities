@@ -18,3 +18,18 @@ There is at most one “true positive” per labeled polygon.
 The measure of proximity between labeled polygons and proposed polygons is the Jaccard similarity or the “Intersection over Union (IoU)”, defined as:
 
 ![alt text](https://github.com/SpaceNetChallenge/utilities/blob/master/content/IoU.jpg "IoU")
+
+The value of IoU is between 0 and 1, where closer polygons have higher IoU values.
+
+The F1 score is the harmonic mean of precision and recall, combining the accuracy in the precision measure and the completeness in the recall measure. For this competition, the number of true positives and false positives are aggregated over all of the test imagery and the F1 score is computed from the aggregated counts.
+
+For example, suppose there are N polygon labels for building footprints that are considered ground truth and suppose there are M proposed polygons by an entry in the SpaceNet competition.  Let tp denote the number of true positives of the M proposed polygons.  The F1 score is calculated as follows:
+
+![alt text](https://github.com/SpaceNetChallenge/utilities/blob/master/content/F1.jpg "IoU")
+
+The F1 score is between 0 and 1, where larger numbers are better scores.
+
+Hints:
+* The images provided could contain anywhere from zero to multiple buildings.
+* All proposed polygons should be legitimate (they should have an area, they should have points that at least make a triangle instead of a point or a line, etc).
+* Use the [metric implementation code](https://github.com/SpaceNetChallenge/utilities/blob/master/python/evaluateScene.py) to self evaluate.
