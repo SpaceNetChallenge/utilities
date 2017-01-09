@@ -4,7 +4,7 @@ This repository has two python packages, geoTools and evalTools. The geoTools pa
 
 ## Download Instructions
 
-Further download instructions for the [SpaceNet Dataset](https://github.com/SpaceNetChallenge/utilities/tree/master/content/download_instructions) can be found [here]https://github.com/SpaceNetChallenge/utilities/tree/master/content/download_instructions 
+Further download instructions for the [SpaceNet Dataset](https://github.com/SpaceNetChallenge/utilities/tree/master/content/download_instructions) can be found [here](https://github.com/SpaceNetChallenge/utilities/tree/master/content/download_instructions)
 
 
 ## Evaluation Metric
