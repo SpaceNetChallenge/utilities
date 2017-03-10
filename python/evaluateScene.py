@@ -1,5 +1,5 @@
-from spaceNet import evalTools as eT
-from spaceNet import geoTools as gT
+from spaceNetUtilities import evalTools as eT
+from spaceNetUtilities import geoTools as gT
 import numpy as np
 import sys
 import multiprocessing
@@ -28,8 +28,8 @@ if __name__ == "__main__":
 
     t0 = time.time()
     # Start Ingest Of Truth and Test Case
-    sol_polys = gT.importgeojson(truth_fp, removeNoBuildings=True)
-    prop_polys = gT.importgeojson(test_fp)
+    sol_polys = gT.import_summary_geojson(truth_fp, removeNoBuildings=True)
+    prop_polys = gT.import_summary_geojson(test_fp)
 
     t1 = time.time()
     total = t1 - t0
