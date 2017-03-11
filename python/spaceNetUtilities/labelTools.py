@@ -429,7 +429,10 @@ def createAOIName(AOI_Name, AOI_Num,
                   clipOverlap=0.0,
                   minpartialPerc=0.0,
                   vrtMosaic=True,
-                  createPix=False):
+                  createPix=False,
+                  createSummaryCSVChallenge=True,
+                  csvLabel='All',
+                  featureName='Buildings'):
 
     srcImageryList = []
     if clipImageryToAOI:
@@ -476,6 +479,12 @@ def createAOIName(AOI_Name, AOI_Num,
                                            minpartialPerc=minpartialPerc, createPix=createPix,
                                            baseName='AOI_{}_{}'.format(AOI_Num, AOI_Name),
                                            imgIdStart=1)
+
+
+    outputCSVSummaryName = 'AOI_{}_{}_{}_{}_solutions.csv'.format(AOI_Num, AOI_Name, csvLabel,featureName)
+    createCSVSummaryFile(chipSummaryList, outputCSVSummaryName, rasterChipDirectory='', replaceImageID='',
+                         createProposalsFile=False,
+                         pixPrecision=2)
 
 
 
