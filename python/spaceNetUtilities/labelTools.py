@@ -10,7 +10,7 @@ from PIL import Image
 from xml.etree.ElementTree import Element, SubElement, Comment, tostring
 from xml.etree import ElementTree
 from xml.dom import minidom
-
+import subprocess
 
 
 def evaluateLineStringPlane(geom, label='Airplane'):
@@ -500,7 +500,8 @@ def geoJsonToPascalVOC(xmlFileName, geoJson, rasterImageName, im_id='',
                        folder_name='spacenet',
                        annotationStyle = 'PASCAL VOC2012',
                        segment=True,
-                       bufferSizePix=2.5):
+                       bufferSizePix=2.5,
+                       convertTo8Bit=True):
 
     print("creating {}".format(xmlFileName))
     buildingList = gT.convert_wgs84geojson_to_pixgeojson(geoJson, rasterImageName, image_id=[], pixelgeojson=[], only_polygons=True,
@@ -512,7 +513,33 @@ def geoJsonToPascalVOC(xmlFileName, geoJson, rasterImageName, im_id='',
                                              #})
 
 
+
+
+
     srcRaster = gdal.Open(rasterImageName)
+
+    if convertTo8Bit:
+        cmd = ['gdal_translate', '-ot', 'Byte']
+        scaleList = []
+        for bandId in srcRaster.RasterCount:
+
+            band=srcRaster.GetRasterBand(bandId)
+            min = band.GetMinimum()
+            max = band.GetMaximum()
+
+            # if not exist minimum and maximum values
+            if min is None or max is None:
+                (min, max) = band.ComputeRasterMinMax(1)
+            cmd.append('scale_{}'.format(bandId))
+            cmd.append('{}'.format(0))
+            cmd.append('{}'.format(max))
+            cmd.append('{}'.format(0))
+            cmd.append('{}'.format(255))
+
+        cmd.append(rasterImageName)
+        cmd.append(rasterImageName.replace('_img', '8bit_img'))
+        subprocess.call(cmd)
+
 
     if segment:
         segmented = 1  # 1=True, 0 = False
