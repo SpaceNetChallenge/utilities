@@ -521,8 +521,8 @@ def geoJsonToPascalVOC(xmlFileName, geoJson, rasterImageName, im_id='',
     if convertTo8Bit:
         cmd = ['gdal_translate', '-ot', 'Byte']
         scaleList = []
-        for bandId in srcRaster.RasterCount:
-
+        for bandId in range(srcRaster.RasterCount):
+            bandId = bandId+1
             band=srcRaster.GetRasterBand(bandId)
             min = band.GetMinimum()
             max = band.GetMaximum()
