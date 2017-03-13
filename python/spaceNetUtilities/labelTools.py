@@ -10,11 +10,7 @@ from PIL import Image
 from xml.etree.ElementTree import Element, SubElement, Comment, tostring
 from xml.etree import ElementTree
 from xml.dom import minidom
-try:
 
-    import cv2
-except:
-    print('cs2 failed no install')
 
 
 def evaluateLineStringPlane(geom, label='Airplane'):
