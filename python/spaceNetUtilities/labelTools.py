@@ -586,6 +586,8 @@ def geoJsonToPascalVOC(xmlFileName, geoJson, rasterImageName, im_id='',
             ingeom = feature.GetGeometryRef()
             geomBufferOut = ingeom.Buffer(bufferDist)
             geomBufferIn  = ingeom.Buffer(-bufferDist)
+            print(geomBufferIn.ExportToWkt())
+            print(geomBufferIn.IsValid())
 
             outBufFeature = ogr.Feature(featureDefn)
             outBufFeature.SetGeometry(geomBufferOut)
