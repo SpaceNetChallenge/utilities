@@ -603,15 +603,21 @@ def geoJsonToPascalVOC(xmlFileName, geoJson, rasterImageName, im_id='',
 
 
         print('writing GTIFF sgcls')
+        print('rasterToWrite = {}'.format(xmlFileName.replace('.xml', 'segcls.tif')))
         target_ds = gdal.GetDriverByName('GTiff').Create(xmlFileName.replace('.xml', 'segcls.tif'), srcRaster.RasterXSize, srcRaster.RasterYSize, 1, gdal.GDT_Byte)
+        print('setTransform')
         target_ds.SetGeoTransform(srcRaster.GetGeoTransform())
+        print('setProjection')
         target_ds.SetProjection(srcRaster.GetProjection())
+        print('getBand')
         band = target_ds.GetRasterBand(1)
-
+        print('setnodata')
         band.SetNoDataValue(NoData_value)
 
         # Rasterize
+        print('rasterize outer buffer')
         gdal.RasterizeLayer(target_ds, [1], outerBufferLayer, burn_values=[255])
+        print('rasterize inner buffer')
         gdal.RasterizeLayer(target_ds, [1], innerBufferLayer, burn_values=[100])
         print('writing png sgcls')
         # write to .png
