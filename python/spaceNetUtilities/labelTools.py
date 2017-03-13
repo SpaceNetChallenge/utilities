@@ -590,7 +590,7 @@ def geoJsonToPascalVOC(xmlFileName, geoJson, rasterImageName, im_id='',
             print(geomBufferIn.IsEmpty())
             print(geomBufferIn.IsSimple())
 
-            if geomBufferIn.IsEmpty():
+            if not geomBufferIn.IsEmpty():
                 outBufFeature = ogr.Feature(featureDefn)
                 outBufFeature.SetGeometry(geomBufferOut)
 
