@@ -6,6 +6,7 @@ import math
 import cPickle as pickle
 import csv
 import glob
+from PIL import Image
 from xml.etree.ElementTree import Element, SubElement, Comment, tostring
 from xml.etree import ElementTree
 from xml.dom import minidom
@@ -606,7 +607,7 @@ def geoJsonToPascalVOC(xmlFileName, geoJson, rasterImageName, im_id='',
 
 
 
-        target_ds = gdal.GetDriverByName('PNG').Create(xmlFileName.replace('.xml', 'segcls.tif'), srcRaster.RasterXSize, srcRaster.RasterYSize, 1, gdal.GDT_Byte)
+        target_ds = gdal.GetDriverByName('GTiff').Create(xmlFileName.replace('.xml', 'segcls.tif'), srcRaster.RasterXSize, srcRaster.RasterYSize, 1, gdal.GDT_Byte)
         target_ds.SetGeoTransform(srcRaster.GetGeoTransform())
         target_ds.SetProjection(srcRaster.GetProjection())
         band = target_ds.GetRasterBand(1)
@@ -617,9 +618,14 @@ def geoJsonToPascalVOC(xmlFileName, geoJson, rasterImageName, im_id='',
         gdal.RasterizeLayer(target_ds, [1], outerBufferLayer, burn_values=[255])
         gdal.RasterizeLayer(target_ds, [1], innerBufferLayer, burn_values=[100])
 
+        # write to .png
+        imageArray = np.array(target_ds.GetRasterBand(1).ReadAsArray())
+        im = Image.fromarray(imageArray)
+        im.save(xmlFileName.replace(xmlFileName.replace('.xml', 'segcls.png')))
+
 
         ## create objectSegment
-        target_ds = gdal.GetDriverByName('PNG').Create(xmlFileName.replace('.xml', 'segobj.tif'),
+        target_ds = gdal.GetDriverByName('GTiff').Create(xmlFileName.replace('.xml', 'segobj.tif'),
                                                          srcRaster.RasterXSize, srcRaster.RasterYSize, 1, gdal.GDT_Byte)
         target_ds.SetGeoTransform(srcRaster.GetGeoTransform())
         target_ds.SetProjection(srcRaster.GetProjection())
@@ -630,5 +636,10 @@ def geoJsonToPascalVOC(xmlFileName, geoJson, rasterImageName, im_id='',
         # Rasterize
         gdal.RasterizeLayer(target_ds, [1], outerBufferLayer, burn_values=[255])
         gdal.RasterizeLayer(target_ds, [1], innerBufferLayer, burn_values=[100], options=['ATTRIBUTE=objid'])
+
+        # write to .png
+        imageArray = np.array(target_ds.GetRasterBand(1).ReadAsArray())
+        im = Image.fromarray(imageArray)
+        im.save(xmlFileName.replace(xmlFileName.replace('.xml', 'segcls.png')))
 
 
