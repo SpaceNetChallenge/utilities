@@ -621,7 +621,7 @@ def geoJsonToPascalVOC(xmlFileName, geoJson, rasterImageName, im_id='',
         # write to .png
         imageArray = np.array(target_ds.GetRasterBand(1).ReadAsArray())
         im = Image.fromarray(imageArray)
-        im.save(xmlFileName.replace(xmlFileName.replace('.xml', 'segcls.png')))
+        im.save(xmlFileName.replace('.xml', 'segcls.png'))
 
 
         ## create objectSegment
@@ -640,6 +640,6 @@ def geoJsonToPascalVOC(xmlFileName, geoJson, rasterImageName, im_id='',
         # write to .png
         imageArray = np.array(target_ds.GetRasterBand(1).ReadAsArray())
         im = Image.fromarray(imageArray)
-        im.save(xmlFileName.replace(xmlFileName.replace('.xml', 'segcls.png')))
+        im.save(xmlFileName.replace('.xml', 'segcls.png'))
 
 
