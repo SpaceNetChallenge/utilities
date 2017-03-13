@@ -502,7 +502,7 @@ def geoJsonToPascalVOC(xmlFileName, geoJson, rasterImageName, im_id='',
                        segment=True,
                        bufferSizePix=2.5):
 
-
+    print("creating {}".format(xmlFileName))
     buildingList = gT.convert_wgs84geojson_to_pixgeojson(geoJson, rasterImageName, image_id=[], pixelgeojson=[], only_polygons=True,
                                        breakMultiPolygonGeo=True, pixPrecision=2)
     #                        buildinglist.append({'ImageId': image_id,
@@ -564,7 +564,7 @@ def geoJsonToPascalVOC(xmlFileName, geoJson, rasterImageName, im_id='',
         f.write(prettify(top))
 
 
-
+    print('creating segmentation')
     if segment:
         NoData_value = -9999
 
