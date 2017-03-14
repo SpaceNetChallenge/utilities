@@ -21,25 +21,24 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 ## Install Essentials for Pillow
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        libjpeg \
-        zlib \
-        libtiff \
-        libfreetype \
-        littlecms \
-        libwebp \
-        openjpeg \
+        libjpeg-dev \
+        zlib1g \
+        libtiff5-dev \
+        libfreetype6-dev \
+        libwebp-dev \
+        libopenjpeg-dev
 
 RUN pip install Pillow
 
 ## Install GDAL Requirments
 RUN apt-get update && apt-get install -y --no-install-recommends \
         gdal-bin \
-        python-gdal \
+        python-gdal
 
 ## Instal OpenCV Requirements
 RUN apt-get update && apt-get install -y --no-install-recommends \
         libopencv-dev \
-        python-opencv \
+        python-opencv
 
 ## Install RTRee
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -59,6 +58,5 @@ ENV PYUTILS_ROOT $GIT_BASE/utilities/python
 ENV PYTHONPATH PYUTILS_ROOT:$PYTHONPATH
 
 WORKDIR /workspace
-
 
 
