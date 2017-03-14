@@ -519,7 +519,7 @@ def geoJsonToPascalVOC(xmlFileName, geoJson, rasterImageName, im_id='',
     srcRaster = gdal.Open(rasterImageName)
 
     if convertTo8Bit:
-        cmd = ['gdal_translate', '-ot', 'Byte']
+        cmd = ['gdal_translate', '-ot', 'Byte', '-of', 'JPEG']
         scaleList = []
         for bandId in range(srcRaster.RasterCount):
             bandId = bandId+1
@@ -537,7 +537,7 @@ def geoJsonToPascalVOC(xmlFileName, geoJson, rasterImageName, im_id='',
             cmd.append('{}'.format(255))
 
         cmd.append(rasterImageName)
-        outputRaster = xmlFileName.replace('.xml', '.tif')
+        outputRaster = xmlFileName.replace('.xml', '.jpg')
         outputRaster = outputRaster.replace('_img', '_8bit_img')
         cmd.append(outputRaster)
         print(cmd)
