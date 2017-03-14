@@ -537,7 +537,9 @@ def geoJsonToPascalVOC(xmlFileName, geoJson, rasterImageName, im_id='',
             cmd.append('{}'.format(255))
 
         cmd.append(rasterImageName)
-        cmd.append(rasterImageName.replace('_img', '8bit_img'))
+        outputRaster = xmlFileName.replace('.xml', '.tif')
+        outputRaster = outputRaster.replace('_img', '_8bit_img')
+        cmd.append(outputRaster)
         print(cmd)
         subprocess.call(cmd)
 
