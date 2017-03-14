@@ -530,7 +530,7 @@ def geoJsonToPascalVOC(xmlFileName, geoJson, rasterImageName, im_id='',
             # if not exist minimum and maximum values
             if min is None or max is None:
                 (min, max) = band.ComputeRasterMinMax(1)
-            cmd.append('scale_{}'.format(bandId))
+            cmd.append('-scale_{}'.format(bandId))
             cmd.append('{}'.format(0))
             cmd.append('{}'.format(max))
             cmd.append('{}'.format(0))
