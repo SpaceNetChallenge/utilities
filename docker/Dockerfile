@@ -34,16 +34,16 @@ python-gdal
 
 ## Install General Requirements
 RUN apt-get update && apt-get install -y --no-install-recommends \
+        apt-utils \
         build-essential \
         cmake \
         git \
         wget \
         vim \
-        apt-utils \
         python-dev \
         python-pip \
         python-setuptools
-RUN pip install --upgrade
+RUN pip install --upgrade pip
 
 ## Install Basics for Python
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -86,7 +86,7 @@ ENV CLONE_TAG=spacenetV2
 RUN git clone -b ${CLONE_TAG} --depth 1 https://github.com/SpaceNetChallenge/utilities.git
 
 ENV PYUTILS_ROOT $GIT_BASE/utilities/python
-ENV PYTHONPATH PYUTILS_ROOT:$PYTHONPATH
+ENV PYTHONPATH $PYUTILS_ROOT:$PYTHONPATH
 
 WORKDIR /workspace
 
