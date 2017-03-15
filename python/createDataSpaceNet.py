@@ -100,7 +100,9 @@ def processChipSummaryList(chipSummaryList, outputDirectory='', annotationType='
 
 if __name__ == '__main__':
 
-
+    #python createDataSpaceNet.py /data/spacenet_sample/AOI_2_Vegas_Train/ RGB-PanSharpen \
+    #                             --outputDirectory /data/spacenet_sample/annotations/ \
+    #                             --imgSizePix 416
     parser = argparse.ArgumentParser(description='Process SrcData for Region ComputerVision Dataset')
     parser.add_argument("srcSpaceNetFolder", help="location of Spacenet AOI Data i.e. '/path/to/AOI_2_Vegas")
     parser.add_argument("srcImageryDirectory", help="folder to look for imagery in i.e. 'RGB-PanSharpen'")
@@ -146,6 +148,8 @@ if __name__ == '__main__':
         #fullPathAnnotationsDirectory = os.path.join(fullPathSubDir, annotationsDirectory)
         if not os.path.exists(fullPathAnnotationsDirectory):
             os.makedirs(fullPathAnnotationsDirectory)
+        if not os.path.exists(os.path.join(fullPathAnnotationsDirectory, 'annotations')):
+            os.makedirs(os.path.join(fullPathAnnotationsDirectory, 'annotations'))
 
         fullPathImageDirectory = os.path.join(fullPathSubDir, srcImageryDirectory)
         fullPathGeoJsonDirectory = os.path.join(fullPathSubDir, geojsonDirectory)
@@ -172,7 +176,7 @@ if __name__ == '__main__':
                                                     minpartialPerc=0.0,
                                                     outputPrefix='')
 
-                entryListTmp = processChipSummaryList(chipSummaryList, outputDirectory='', annotationType='PASCAL VOC2012',
+                entryListTmp = processChipSummaryList(chipSummaryList, outputDirectory=os.path.join(fullPathAnnotationsDirectory, 'annotations'), annotationType='PASCAL VOC2012',
                                        outputFormat='GTiff',
                                        outputPixType='',
                                        datasetName='spacenetV2',
