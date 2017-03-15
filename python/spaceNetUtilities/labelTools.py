@@ -501,7 +501,9 @@ def geoJsonToPascalVOC(xmlFileName, geoJson, rasterImageName, im_id='',
                        annotationStyle = 'PASCAL VOC2012',
                        segment=True,
                        bufferSizePix=2.5,
-                       convertTo8Bit=True):
+                       convertTo8Bit=True,
+                       outputPixType='Byte',
+                       outputFormat='GTiff'):
 
     print("creating {}".format(xmlFileName))
     buildingList = gT.convert_wgs84geojson_to_pixgeojson(geoJson, rasterImageName, image_id=[], pixelgeojson=[], only_polygons=True,
@@ -517,9 +519,9 @@ def geoJsonToPascalVOC(xmlFileName, geoJson, rasterImageName, im_id='',
 
 
     srcRaster = gdal.Open(rasterImageName)
-
+    outputRaster = rasterImageName
     if convertTo8Bit:
-        cmd = ['gdal_translate', '-ot', 'Byte', '-of', 'JPEG']
+        cmd = ['gdal_translate', '-ot', outputPixType, '-of', 'JPEG']
         scaleList = []
         for bandId in range(srcRaster.RasterCount):
             bandId = bandId+1
@@ -677,5 +679,18 @@ def geoJsonToPascalVOC(xmlFileName, geoJson, rasterImageName, im_id='',
         imageArray = np.array(target_ds.GetRasterBand(1).ReadAsArray())
         im = Image.fromarray(imageArray)
         im.save(xmlFileName.replace('.xml', 'segobj.png'))
+
+
+
+        entry = {'rasterFileName': outputRaster,
+                 'geoJsonFileName': geoJson,
+                 'annotationName': xmlFileName,
+                 'width': srcRaster.RasterXSize,
+                 'height': srcRaster.RasterYSize,
+                 'depth' : srcRaster.RasterCount,
+                 'basename': os.path.splitext(os.path.basename(rasterImageName))[0]
+                 }
+
+        return entry
 
 
