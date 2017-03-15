@@ -10,7 +10,7 @@ import argparse
 
 
 def processRasterChip(rasterImage, rasterDescription, geojson, geojsonDescription, outputDirectory='',
-                      imagePixSize=-1, clipOverlap=0.0, randomClip=False, outputDataType='', outputFileType='',
+                      imagePixSize=-1, clipOverlap=0.0, randomClip=False,
                       minpartialPerc=0.0,
                       outputPrefix=''):
 
@@ -57,6 +57,12 @@ def processChipSummaryList(chipSummaryList, outputDirectory='', annotationType='
                            datasetName='spacenetV2',
                            folder_name='folder_name'
                            ):
+
+    if outputPixType == '':
+        convertTo8Bit = False
+    else:
+        convertTo8Bit = True
+
     entryList = []
     for chipSummary in chipSummaryList:
 
@@ -70,18 +76,23 @@ def processChipSummaryList(chipSummaryList, outputDirectory='', annotationType='
 
         if annotationType=='PASCAL VOC2012':
             entry = lT.geoJsonToPascalVOC(annotationName, chipSummary['geoVectorName'], chipSummary['rasterSource'],
-                                  dataset='spacenetV2',
-                                  folder_name='spacenetV2',
-                                  annotationStyle=annotationType,
-                                  segment=True,
-                                  bufferSizePix=2.5)
+                                          dataset='spacenetV2',
+                                          folder_name='spacenetV2',
+                                          annotationStyle=annotationType,
+                                          segment=True,
+                                          bufferSizePix=2.5,
+                                          convertTo8Bit=convertTo8Bit,
+                                          outputPixType=outputPixType
+                                          )
         elif annotationType=='YOLO':
-            entry = lT.geoJsonToPascalVOC(annotationName, chipSummary['geoVectorName'], chipSummary['rasterSource'],
-                                  dataset='spacenetV2',
-                                  folder_name='spacenetV2',
-                                  annotationStyle=annotationType,
-                                  segment=True,
-                                  bufferSizePix=2.5)
+            entry = lT.geoJsonToYolo(annotationName, chipSummary['geoVectorName'], chipSummary['rasterSource'],
+                                           dataset='spacenetV2',
+                                           folder_name='spacenetV2',
+                                           annotationStyle=annotationType,
+                                           convertTo8Bit=convertTo8Bit,
+                                           outputPixType=outputPixType,
+                                           outputFormat=outputFormat
+                                  )
 
         elif annotationType=='MNC':
             print('MNC is not supported yet')
@@ -119,6 +130,14 @@ if __name__ == '__main__':
                              "Default is -1, images are not modified",
                         type=int,
                         default=-1)
+    parser.add_argument("--annotationType",
+                        help="Set the annotationType.  Currently Supported is YOLO and 'PASCAL VOC'"
+                             "default is 'PASCAL VOC'",
+                        default='PASCAL VOC2012')
+    parser.add_argument("--convertTo8Bit",
+                        help='Convert Image from Native format to 8bit',
+                        action='store_true')
+
     parser.add_argument("--featureName",
                         help='Type of feature to be summarized by csv (i.e. Building)',
                         type=str,
@@ -135,6 +154,15 @@ if __name__ == '__main__':
     listOfAOIs = [srcSpaceNetDirectory]
     srcImageryDirectory = args.srcImageryDirectory  # 'PAN', 'MUL, 'MUL-PanSharpen', 'RGB-PanSharpen'
     geojsonDirectory = os.path.join('geojson', args.geoJsonDirectory) # 'geojson/buildings/'
+
+
+    if args.convertTo8Bit:
+        outputDataType = 'Byte'
+        outputFileType = 'JPEG'
+    else:
+        outputDataType = ''
+        outputFileType = ''
+
 
     if args.outputDirectory == 'annotations':
         fullPathAnnotationsDirectory = os.path.join(srcSpaceNetDirectory, 'annotations')
@@ -171,18 +199,19 @@ if __name__ == '__main__':
                 chipSummaryList = processRasterChip(rasterImage, srcImageryDirectory,
                                                     geoJson, args.geoJsonDirectory,
                                                     outputDirectory=fullPathAnnotationsDirectory,
-                                                    imagePixSize=args.imgSizePix, clipOverlap=0.0, randomClip=False, outputDataType='Byte',
-                                                    outputFileType='JPEG',
+                                                    imagePixSize=args.imgSizePix, clipOverlap=0.0, randomClip=False,
                                                     minpartialPerc=0.0,
                                                     outputPrefix='')
 
-                entryListTmp = processChipSummaryList(chipSummaryList, outputDirectory=os.path.join(fullPathAnnotationsDirectory, 'annotations'), annotationType='PASCAL VOC2012',
-                                       outputFormat='GTiff',
-                                       outputPixType='',
-                                       datasetName='spacenetV2',
-                                       folder_name='folder_name'
+                entryListTmp = processChipSummaryList(chipSummaryList,
+                                                      outputDirectory=os.path.join(fullPathAnnotationsDirectory, 'annotations'),
+                                                      annotationType=args.annotationType,
+                                                      outputFormat=outputFileType,
+                                                      outputPixType=outputDataType,
+                                                      datasetName='spacenetV2',
+                                                      folder_name='folder_name'
                                        )
-
+                print entryListTmp
                 entryList.extend(entryListTmp)
 
 
