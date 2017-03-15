@@ -115,12 +115,12 @@ if __name__ == '__main__':
     #                             --outputDirectory /data/spacenet_sample/annotations/ \
     #                             --imgSizePix 416
 
-    # python ~/cosmiQGit/spaceNetUtilities_Public/python/createDataSpaceNet.py /data/spacenet_sample/AOI_2_Vegas_Train/
+    # python createDataSpaceNet.py /data/spacenet_sample/AOI_2_Vegas_Train/
     # RGB-PanSharpen --outputDirectory /data/spacenet_sample/annotations/ --imgSizePix 416
     # --annotationType "PASCAL VOC2012" --convertTo8Bit
 
 
-    # python ~/cosmiQGit/spaceNetUtilities_Public/python/createDataSpaceNet.py /data/spacenet_sample/AOI_2_Vegas_Train/
+    # python createDataSpaceNet.py /data/spacenet_sample/AOI_2_Vegas_Train/
     # RGB-PanSharpen --outputDirectory /data/spacenet_sample/annotations/ --imgSizePix 416 --annotationType "YOLO"
     #  --convertTo8Bit
     parser = argparse.ArgumentParser(description='Process SrcData for Region ComputerVision Dataset')
