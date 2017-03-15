@@ -581,14 +581,14 @@ def geoJsonToPascalVOC(xmlFileName, geoJson, rasterImageName, im_id='',
         childObject = SubElement(top, 'object')
         SubElement(childObject, 'name').text = objectType
         SubElement(childObject, 'pose').text = objectPose
-        SubElement(childObject, 'truncated').text = objectTruncated
-        SubElement(childObject, 'difficult').text = objectDifficulty
+        SubElement(childObject, 'truncated').text = str(objectTruncated)
+        SubElement(childObject, 'difficult').text = str(objectDifficulty)
         # write bounding box
         childBoundBox = SubElement(childObject, 'bndbox')
-        SubElement(childBoundBox, 'xmin').text = str(env[0])
-        SubElement(childBoundBox, 'ymin').text = str(env[2])
-        SubElement(childBoundBox, 'xmax').text = str(env[1])
-        SubElement(childBoundBox, 'ymax').text = str(env[3])
+        SubElement(childBoundBox, 'xmin').text = str(int(round(env[0])))
+        SubElement(childBoundBox, 'ymin').text = str(int(round(env[2])))
+        SubElement(childBoundBox, 'xmax').text = str(int(round(env[1])))
+        SubElement(childBoundBox, 'ymax').text = str(int(round(env[3])))
 
     with open(xmlFileName, 'w') as f:
         f.write(prettify(top))
