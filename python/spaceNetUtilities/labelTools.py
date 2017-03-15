@@ -501,7 +501,9 @@ def geoJsonToPascalVOC(xmlFileName, geoJson, rasterImageName, im_id='',
                        annotationStyle = 'PASCAL VOC2012',
                        segment=True,
                        bufferSizePix=2.5,
-                       convertTo8Bit=True):
+                       convertTo8Bit=True,
+                       outputPixType='Byte',
+                       outputFormat='GTiff'):
 
     print("creating {}".format(xmlFileName))
     buildingList = gT.convert_wgs84geojson_to_pixgeojson(geoJson, rasterImageName, image_id=[], pixelgeojson=[], only_polygons=True,
@@ -517,9 +519,9 @@ def geoJsonToPascalVOC(xmlFileName, geoJson, rasterImageName, im_id='',
 
 
     srcRaster = gdal.Open(rasterImageName)
-
+    outputRaster = rasterImageName
     if convertTo8Bit:
-        cmd = ['gdal_translate', '-ot', 'Byte', '-of', 'JPEG']
+        cmd = ['gdal_translate', '-ot', outputPixType, '-of', outputFormat]
         scaleList = []
         for bandId in range(srcRaster.RasterCount):
             bandId = bandId+1
@@ -537,7 +539,12 @@ def geoJsonToPascalVOC(xmlFileName, geoJson, rasterImageName, im_id='',
             cmd.append('{}'.format(255))
 
         cmd.append(rasterImageName)
-        outputRaster = xmlFileName.replace('.xml', '.jpg')
+
+        if outputFormat == 'JPEG':
+            outputRaster = xmlFileName.replace('.xml', '.jpg')
+        else:
+            outputRaster = xmlFileName.replace('.xml', '.tif')
+
         outputRaster = outputRaster.replace('_img', '_8bit_img')
         cmd.append(outputRaster)
         print(cmd)
@@ -677,5 +684,121 @@ def geoJsonToPascalVOC(xmlFileName, geoJson, rasterImageName, im_id='',
         imageArray = np.array(target_ds.GetRasterBand(1).ReadAsArray())
         im = Image.fromarray(imageArray)
         im.save(xmlFileName.replace('.xml', 'segobj.png'))
+
+
+
+    entry = {'rasterFileName': outputRaster,
+                 'geoJsonFileName': geoJson,
+                 'annotationName': xmlFileName,
+                 'width': srcRaster.RasterXSize,
+                 'height': srcRaster.RasterYSize,
+                 'depth' : srcRaster.RasterCount,
+                 'basename': os.path.splitext(os.path.basename(rasterImageName))[0]
+                 }
+
+    return entry
+
+def convert(size, box):
+    '''Input = image size: (w,h), box: [x0, x1, y0, y1]'''
+    dw = 1./size[0]
+    dh = 1./size[1]
+    xmid = (box[0] + box[1])/2.0
+    ymid = (box[2] + box[3])/2.0
+    w0 = box[1] - box[0]
+    h0 = box[3] - box[2]
+    x = xmid*dw
+    y = ymid*dh
+    w = w0*dw
+    h = h0*dh
+
+    return (x,y,w,h)
+
+def geoJsonToYolo(xmlFileName, geoJson, rasterImageName, im_id='',
+                       dataset ='SpaceNet',
+                       folder_name='spacenet',
+                       annotationStyle = 'YOLO',
+                       segment=True,
+                       bufferSizePix=2.5,
+                       convertTo8Bit=True,
+                       outputPixType='Byte',
+                       outputFormat='GTiff'):
+    xmlFileName = xmlFileName.replace(".xml", ".txt")
+    print("creating {}".format(xmlFileName))
+
+    buildingList = gT.convert_wgs84geojson_to_pixgeojson(geoJson, rasterImageName, image_id=[], pixelgeojson=[], only_polygons=True,
+                                       breakMultiPolygonGeo=True, pixPrecision=2)
+    #                        buildinglist.append({'ImageId': image_id,
+                                             #'BuildingId': building_id,
+                                             #'polyGeo': ogr.CreateGeometryFromWkt(geom.ExportToWkt()),
+                                             #'polyPix': ogr.CreateGeometryFromWkt('POLYGON EMPTY')
+                                             #})
+
+
+    srcRaster = gdal.Open(rasterImageName)
+    outputRaster = rasterImageName
+    if convertTo8Bit:
+        cmd = ['gdal_translate', '-ot', outputPixType, '-of', outputFormat]
+        scaleList = []
+        for bandId in range(srcRaster.RasterCount):
+            bandId = bandId+1
+            band=srcRaster.GetRasterBand(bandId)
+            min = band.GetMinimum()
+            max = band.GetMaximum()
+
+            # if not exist minimum and maximum values
+            if min is None or max is None:
+                (min, max) = band.ComputeRasterMinMax(1)
+            cmd.append('-scale_{}'.format(bandId))
+            cmd.append('{}'.format(0))
+            cmd.append('{}'.format(max))
+            cmd.append('{}'.format(0))
+            cmd.append('{}'.format(255))
+
+        cmd.append(rasterImageName)
+        if outputFormat == 'JPEG':
+            outputRaster = xmlFileName.replace('.xml', '.jpg')
+        else:
+            outputRaster = xmlFileName.replace('.xml', '.tif')
+
+        outputRaster = outputRaster.replace('_img', '_8bit_img')
+        cmd.append(outputRaster)
+        print(cmd)
+        subprocess.call(cmd)
+
+    with open(xmlFileName, 'w') as f:
+
+        for building in buildingList:
+
+
+            # Get Envelope returns a tuple (minX, maxX, minY, maxY)
+
+            boxDim = building['polyPix'].GetEnvelope()
+            rasterSize = (srcRaster.RasterXSize, srcRaster.RasterYSize)
+
+            lineOutput = convert(rasterSize, boxDim)
+            classNum=0
+            f.write('{} {} {} {} {}\n'.format(classNum,
+                                             lineOutput[0],
+                                             lineOutput[1],
+                                             lineOutput[2],
+                                             lineOutput[3])
+                    )
+
+
+
+
+
+
+
+    entry = {'rasterFileName': outputRaster,
+             'geoJsonFileName': geoJson,
+             'annotationName': xmlFileName,
+             'width': srcRaster.RasterXSize,
+             'height': srcRaster.RasterYSize,
+             'depth' : srcRaster.RasterCount,
+             'basename': os.path.splitext(os.path.basename(rasterImageName))[0]
+             }
+
+    return entry
 
 
