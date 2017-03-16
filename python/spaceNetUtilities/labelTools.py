@@ -1008,3 +1008,71 @@ def createInstanceCategories(vectorSrc):
     else:
        return np.ones(len(data['features']),dtype=np.uint8).reshape((len(data['features']), 1))
 
+
+
+def geoJsonToMNC(annotationName_cls, annotationName_inst, chipSummary['geoVectorName'], chipSummary['rasterSource'],
+                                           dataset='spacenetV2',
+                                           folder_name='spacenetV2',
+                                           annotationStyle=annotationType,
+                                           segment=True,
+                                           convertTo8Bit=convertTo8Bit,
+                                           outputPixType=outputPixType,
+                                           outputFormat=outputFormat
+                                  ):
+
+    #Print raster file name
+    my_raster_source = chipSummary['rasterSource']
+    print("Raster directory : ",my_raster_source)
+
+    #Get image number
+    image_number_search = re.search('(?<=img)\w+', raster_file)
+    image_number = image_number_search.group(0)
+
+    
+    my_vector_source = chipSummary['geoVectorName']
+    print("Vector directory : ",my_vector_source)
+
+    
+    #Call main functions to create label datafor cls
+    my_cls_segmentation = createClassSegmentation(my_raster_source, my_vector_source, npDistFileName='', units='pixels')
+    my_cls_boundaries =  createClassBoundaries(my_raster_source, my_vector_source, npDistFileName='', units='pixels')
+    my_cls_categories = createClassCategoriesPresent(my_vector_source)
+
+    #Call main functions to create label datafor inst
+    my_inst_segmentation = createInstanceSegmentation(my_raster_source, my_vector_source)
+    my_inst_boundaries = createInstanceBoundaries(my_raster_source, my_vector_source)
+    my_inst_categories = createInstanceCategories(my_vector_source)
+
+    #Wraps for cls struct
+    cls_boundaries_wrap = np.array([my_cls_boundaries])
+    cls_categories_wrap = my_cls_categories
+
+    #Wraps for inst struct
+    inst_boundaries_wrap = np.array([my_inst_boundaries])
+    inst_categories_wrap = my_inst_categories
+
+    #Create a class struct
+    GTcls = {'Segmentation': my_cls_segmentation , 'Boundaries': cls_boundaries_wrap, 'CategoriesPresent': cls_categories_wrap}
+
+
+    #Create the instance struct
+    GTinst = {'Segmentation': my_inst_segmentation , 'Boundaries': inst_boundaries_wrap, 'Categories': inst_categories_wrap}
+
+    #Save the files
+    scipy.io.savemat(annotationName_cls,{'GTcls': GTcls})
+    scipy.io.savemat(annotationName_inst,{'GTinst': GTinst})
+
+    print("Done with "+str(image_number))
+
+    entry = {'rasterFileName': outputRaster,
+             'geoJsonFileName': geoJson,
+             'annotationName_cls': annotationName_cls,
+             'annotationName_inst':annotationName_inst,
+             'width': srcRaster.RasterXSize,
+             'height': srcRaster.RasterYSize,
+             'depth' : srcRaster.RasterCount,
+             'basename': os.path.splitext(os.path.basename(rasterImageName))[0]
+             }
+
+    return entry
+

@@ -95,8 +95,26 @@ def processChipSummaryList(chipSummaryList, outputDirectory='', annotationType='
                                   )
 
         elif annotationType=='MNC':
-            print('MNC is not supported yet')
-            return -1
+            basename = os.path.basename(chipSummary['rasterSource'])
+            annotationName = basename.replace('.tif', '.mat')
+            annotationName_cls = os.path.join(outputDirectory,'cls', annotationName)
+            annotationName_inst = os.path.join(outputDirectory,'inst', annotationName)
+
+            #Check to make sure output directories exist, if not make it.
+            if not os.path.exists(os.path.join(outputDirectory,'cls')):
+              os.makedirs(os.path.join(outputDirectory,'cls'))
+            if not os.path.exists(os.path.join(outputDirectory,'inst')):
+              os.makedirs(os.path.join(outputDirectory,'inst'))
+            
+            entry = lT.geoJsonToMNC(annotationName_cls, annotationName_inst, chipSummary['geoVectorName'], chipSummary['rasterSource'],
+                                           dataset='spacenetV2',
+                                           folder_name='spacenetV2',
+                                           annotationStyle=annotationType,
+                                           segment=True,
+                                           convertTo8Bit=convertTo8Bit,
+                                           outputPixType=outputPixType,
+                                           outputFormat=outputFormat
+                                  )
         else:
             print ("Annotation Type = {} is not supported yet".format(annotationType))
             return -1
