@@ -816,7 +816,9 @@ def cutChipFromMosaic(rasterFileList, shapeFileSrcList, outlineSrc='',outputDire
                       clipSizeMX=100, clipSizeMY=100, clipOverlap=0.0, minpartialPerc=0.0, createPix=False,
                       baseName='',
                       imgIdStart=-1,
-                      parrallelProcess=False):
+                      parrallelProcess=False,
+                      noBlackSpace=False,
+                      randomClip=-1):
     #rasterFileList = [['rasterLocation', 'rasterDescription']]
     # i.e rasterFileList = [['/path/to/3band_AOI_1.tif, '3band'],
     #                       ['/path/to/8band_AOI_1.tif, '8band']
@@ -892,7 +894,19 @@ def cutChipFromMosaic(rasterFileList, shapeFileSrcList, outlineSrc='',outputDire
             for llY in yInterval:
                 uRX = llX+clipSizeMX
                 uRY = llY+clipSizeMY
-                #print(uRX)
+
+                # check if uRX or uRY is outside image
+                if noBlackSpace:
+                    if uRX > maxX:
+                        uRX = maxX
+                        llX = maxX - clipSizeMX
+                    if uRY > maxY:
+                        uRY = maxY
+                        llY = maxY - clipSizeMY
+
+
+
+
                 polyCut = createPolygonFromCorners(llX, llY, uRX, uRY)
 
 
@@ -930,7 +944,7 @@ def cutChipFromMosaic(rasterFileList, shapeFileSrcList, outlineSrc='',outputDire
 
                     idx = idx+1
                     if imgIdStart == -1:
-                        imgId == -1
+                        imgId = -1
                     else:
                         imgId = idx
 
