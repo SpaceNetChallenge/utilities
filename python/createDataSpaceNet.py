@@ -139,6 +139,11 @@ if __name__ == '__main__':
                              "Default is -1, images are not modified",
                         type=int,
                         default=-1)
+    parser.add_argument("--outputFileType",
+                        help="What type of image type would you like to output to currently supported are:"
+                             "1. GTiff"
+                             "2. JPEG",
+                        default='GTiff')
     parser.add_argument("--annotationType",
                         help="Set the annotationType.  Currently Supported is YOLO and 'PASCAL VOC'"
                              "default is 'PASCAL VOC'",
@@ -166,11 +171,18 @@ if __name__ == '__main__':
 
 
     if args.convertTo8Bit:
+
         outputDataType = 'Byte'
-        outputFileType = 'JPEG'
+        outputFileType = args.ouputFileType
+
     else:
         outputDataType = ''
         outputFileType = ''
+
+
+
+
+
 
 
     if args.outputDirectory == 'annotations':
