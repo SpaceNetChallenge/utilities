@@ -33,6 +33,12 @@ Hints:
 * All proposed polygons should be legitimate (they should have an area, they should have points that at least make a triangle instead of a point or a line, etc).
 * Use the [metric implementation code](https://github.com/SpaceNetChallenge/utilities/blob/master/python/evaluateScene.py) to self evaluate.
 
+
+
+
+
+
+
 ## Dependencies
 All dependencies can be found in [requirements.txt](./python/requirements.txt)
 
