@@ -173,7 +173,7 @@ if __name__ == '__main__':
     if args.convertTo8Bit:
 
         outputDataType = 'Byte'
-        outputFileType = args.ouputFileType
+        outputFileType = args.outputFileType
 
     else:
         outputDataType = ''
