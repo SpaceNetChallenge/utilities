@@ -759,9 +759,9 @@ def geoJsonToYolo(xmlFileName, geoJson, rasterImageName, im_id='',
 
         cmd.append(rasterImageName)
         if outputFormat == 'JPEG':
-            outputRaster = xmlFileName.replace('.xml', '.jpg')
+            outputRaster = xmlFileName.replace('.txt', '.jpg')
         else:
-            outputRaster = xmlFileName.replace('.xml', '.tif')
+            outputRaster = xmlFileName.replace('.txt', '.tif')
 
         outputRaster = outputRaster.replace('_img', '_8bit_img')
         cmd.append(outputRaster)
