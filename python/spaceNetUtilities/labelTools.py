@@ -16,6 +16,7 @@ from scipy.io import savemat
 from scipy.sparse import csr_matrix
 import argparse
 import json
+import re
 
 
 def evaluateLineStringPlane(geom, label='Airplane'):
@@ -1010,26 +1011,23 @@ def createInstanceCategories(vectorSrc):
 
 
 
-def geoJsonToMNC(annotationName_cls, annotationName_inst, chipSummary['geoVectorName'], chipSummary['rasterSource'],
+def geoJsonToMNC(annotationName_cls, annotationName_inst, geoJson, rasterSource,
                                            dataset='spacenetV2',
                                            folder_name='spacenetV2',
-                                           annotationStyle=annotationType,
+                                           annotationStyle='',
                                            segment=True,
-                                           convertTo8Bit=convertTo8Bit,
-                                           outputPixType=outputPixType,
-                                           outputFormat=outputFormat
+                                           convertTo8Bit='',
+                                           outputPixType='',
+                                           outputFormat=''
                                   ):
 
     #Print raster file name
-    my_raster_source = chipSummary['rasterSource']
+    my_raster_source = rasterSource
     print("Raster directory : ",my_raster_source)
-
-    #Get image number
-    image_number_search = re.search('(?<=img)\w+', raster_file)
-    image_number = image_number_search.group(0)
+    srcRaster = gdal.Open(my_raster_source)
 
     
-    my_vector_source = chipSummary['geoVectorName']
+    my_vector_source = geoJson
     print("Vector directory : ",my_vector_source)
 
     
@@ -1062,16 +1060,16 @@ def geoJsonToMNC(annotationName_cls, annotationName_inst, chipSummary['geoVector
     scipy.io.savemat(annotationName_cls,{'GTcls': GTcls})
     scipy.io.savemat(annotationName_inst,{'GTinst': GTinst})
 
-    print("Done with "+str(image_number))
+    print("Done with "+str())
 
-    entry = {'rasterFileName': outputRaster,
+    entry = {'rasterFileName': my_raster_source,
              'geoJsonFileName': geoJson,
              'annotationName_cls': annotationName_cls,
              'annotationName_inst':annotationName_inst,
              'width': srcRaster.RasterXSize,
              'height': srcRaster.RasterYSize,
              'depth' : srcRaster.RasterCount,
-             'basename': os.path.splitext(os.path.basename(rasterImageName))[0]
+             'basename': os.path.splitext(os.path.basename(my_raster_source))[0]
              }
 
     return entry
