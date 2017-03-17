@@ -78,7 +78,7 @@ if __name__ == "__main__":
                 rasterName = rastDir[1] + "_" + rasterName
             chipName = [rastDir[1], os.path.join(rastDir[0], rasterName)]
             chipNameList.append(chipName)
-        print imageId
+        print(imageId)
 
         chipSummary = {'chipName': chipNameList,
                        'geoVectorName': os.path.join(geoJsonDirectory, imageId),
@@ -126,11 +126,11 @@ if __name__ == "__main__":
             chipSummaryTmp['chipName'] = chipSummary['chipName'][0][1]
             chipSummaryListTmp.append(chipSummaryTmp)
 
-        print "starting"
+        print("starting")
         outputCSVFileName = os.path.join(outputDir, args.outputCSV + splitInformation[0] + ".csv")
 
         lT.createCSVSummaryFile(chipSummaryListTmp, outputCSVFileName,
                                 replaceImageID=rasterPrefix+"_",
                                 pixPrecision=args.pixelPrecision)
 
-        print "finished"
+        print("finished")

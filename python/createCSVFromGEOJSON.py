@@ -1,13 +1,5 @@
-import numpy as np
-import sys
-from spaceNetUtilities import evalTools as eT
-from spaceNetUtilities import geoTools as gT
 from spaceNetUtilities import labelTools as lT
-import multiprocessing
-import time
 import os
-import pandas as pd
-from osgeo import gdal, osr, ogr
 import glob
 import argparse
 
@@ -72,18 +64,18 @@ if __name__ == "__main__":
             rasterName = rasterPrefix+"_"+rasterName.split('_',1)[1]
         else:
             rasterName = rasterPrefix+"_"+rasterName
-        print imageId
-        print os.path.join(rasterDirectory,rasterName)
+        print(imageId)
+        print(os.path.join(rasterDirectory,rasterName))
         chipSummary = {'chipName': os.path.join(rasterDirectory, rasterName),
                        'geoVectorName': os.path.join(geoJsonDirectory, imageId),
                        'imageId': os.path.splitext(imageId)[0]}
 
         chipSummaryList.append(chipSummary)
 
-    print "starting"
+    print("starting")
     lT.createCSVSummaryFile(chipSummaryList, outputCSVFileName,
                             replaceImageID=rasterPrefix+"_",
                             createProposalsFile=createProposalFile,
                             pixPrecision=args.pixelPrecision)
 
-    print "finished"
+    print("finished")

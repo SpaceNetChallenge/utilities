@@ -1,7 +1,5 @@
 import os
-import sys
 import glob
-from osgeo import gdal
 import random
 from spaceNetUtilities import labelTools as lT
 from spaceNetUtilities import geoTools as gT
@@ -21,7 +19,7 @@ def processRasterChip(rasterImage, rasterDescription, geojson, geojsonDescriptio
         rasterFileList = [[rasterImage, rasterDescription]]
         shapeFileSrcList = [[geojson, geojsonDescription]]
         # cut image to size
-        print rasterFileList
+        print(rasterFileList)
         chipSummaryList = gT.cutChipFromMosaic(rasterFileList,
                                            shapeFileSrcList,
                                            outputDirectory=outputDirectory,
@@ -116,7 +114,7 @@ def processChipSummaryList(chipSummaryList, outputDirectory='', annotationType='
                                            outputFormat=outputFormat
                                   )
         else:
-            print ("Annotation Type = {} is not supported yet".format(annotationType))
+            print("Annotation Type = {} is not supported yet".format(annotationType))
             return -1
 
 
@@ -250,7 +248,7 @@ if __name__ == '__main__':
                                                       datasetName='spacenetV2',
                                                       folder_name='folder_name'
                                        )
-                print entryListTmp
+                print(entryListTmp)
                 entryList.extend(entryListTmp)
 
 

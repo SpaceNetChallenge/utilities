@@ -12,9 +12,7 @@ from xml.etree import ElementTree
 from xml.dom import minidom
 import subprocess
 import scipy.io
-from scipy.io import savemat
 from scipy.sparse import csr_matrix
-import argparse
 import json
 import re
 

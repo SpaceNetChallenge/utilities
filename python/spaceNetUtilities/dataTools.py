@@ -1,8 +1,7 @@
 import geoTools as gT
 import numpy as np
 import os
-from osgeo import ogr, gdal, osr
-
+from osgeo import ogr
 import cv2
 from math import ceil
 import math
@@ -109,7 +108,7 @@ def chipImage(rasterFileName, shapeFile, outputDirectory='', numPixelWidth=30,
             label = countInBox
 
             # Calculate the pixel size of the new image
-            print idx
+            print(idx)
             res = fullimg[lrY:ulY, lrX:ulX, :]
             resImgShape = res.shape
             ulXdst = resImgShape[1] / 2 + ceil(numPixelWidth / 2)
@@ -122,8 +121,8 @@ def chipImage(rasterFileName, shapeFile, outputDirectory='', numPixelWidth=30,
                 dstFinal = res[lrYdst:ulYdst, lrXdst:ulXdst, :]
 
             else:
-                print finalImageSize
-                print numPixelWidth
+                print(finalImageSize)
+                print(numPixelWidth)
 
                 dstFinal = cv2.resize(res[lrYdst:ulYdst, lrXdst:ulXdst, :], (finalImageSize, finalImageSize),
                                       interpolation=cv2.INTER_CUBIC)

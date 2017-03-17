@@ -4,7 +4,6 @@ import os
 import csv
 import subprocess
 import math
-from multiprocessing import Pool
 try:
     import rtree
 except:
@@ -158,15 +157,15 @@ def latlon2pixel(lat, lon, input_raster='', targetsr='', geom_transform=''):
         transform = geom_transform
 
     x_origin = transform[0]
-    # print x_origin
+    # print(x_origin)
     y_origin = transform[3]
-    # print y_origin
+    # print(y_origin)
     pixel_width = transform[1]
-    # print pixel_width
+    # print(pixel_width)
     pixel_height = transform[5]
-    # print pixel_height
+    # print(pixel_height)
     geom.Transform(coord_trans)
-    # print geom.GetPoint()
+    # print(geom.GetPoint())
     x_pix = (geom.GetPoint()[0] - x_origin) / pixel_width
     y_pix = (geom.GetPoint()[1] - y_origin) / pixel_height
 
@@ -569,7 +568,7 @@ def convert_wgs84geojson_to_pixgeojson(wgs84geojson, inputraster, image_id=[], p
                                              'polyPix': ogr.CreateGeometryFromWkt('POLYGON EMPTY')
                                              })
             else:
-                #print "no File exists"
+                #print("no File exists")
                 pass
         if pixelgeojson:
             exporttogeojson(pixelgeojson, buildinglist=buildinglist)
@@ -919,7 +918,7 @@ def cutChipFromMosaic(rasterFileList, shapeFileSrcList, outlineSrc='',outputDire
                     polyCut.Transform(transform_UTM_To_WGS84)
                 ## add debug line do cuts
                 if (polyCut).Intersects(geomOutline):
-                    print "Do it."
+                    print("Do it.")
                     #envCut = polyCut.GetEnvelope()
                     #minXCut = envCut[0]
                     #minYCut = envCut[2]
@@ -960,49 +959,6 @@ def cutChipFromMosaic(rasterFileList, shapeFileSrcList, outlineSrc='',outputDire
                     chipSummaryList.append(chipSummary)
 
     return chipSummaryList
-
-def parallelCreateClip(idx, llX, llY, clipSizeMX, clipSizeMY, transform_UTM_To_WGS84, geomOutline,
-                       outputDirectoy, rasterFileList, shapeSrcList,
-                       maxXCut, maxYCut, minYCut, minXCut,
-                       rasterFileBaseList,
-                       minpartialPerc,
-                       outputPrefix,
-                       createPix,
-                       rasterPolyEnvelope,
-                       baseName,
-                       imgId):
-
-    uRX = llX + clipSizeMX
-    uRY = llY + clipSizeMY
-
-    polyCut = createPolygonFromCorners(llX, llY, uRX, uRY)
-    polyCut.Transform(transform_UTM_To_WGS84)
-    if (polyCut).Intersects(geomOutline):
-        print "Do it."
-        envCut = polyCut.GetEnvelope()
-        minXCut = envCut[0]
-        minYCut = envCut[2]
-        maxXCut = envCut[1]
-        maxYCut = envCut[3]
-
-        idx = idx + 1
-        if imgIdStart == -1:
-            imgId == -1
-        else:
-            imgId = idx
-
-        chipSummary = createclip(outputDirectory, rasterFileList, shapeSrcList,
-                                 maxXCut, maxYCut, minYCut, minXCut,
-                                 rasterFileBaseList=rasterFileBaseList,
-                                 minpartialPerc=minpartialPerc,
-                                 outputPrefix=outputPrefix,
-                                 createPix=createPix,
-                                 rasterPolyEnvelope=poly,
-                                 baseName=baseName,
-                                 imgId=imgId)
-
-
-
 
 def createclip(outputDirectory, rasterFileList, shapeSrcList,
                maxXCut, maxYCut, minYCut, minXCut,
@@ -1053,8 +1009,8 @@ def createclip(outputDirectory, rasterFileList, shapeSrcList,
     for chipName, rasterFile in zip(chipNameList, rasterFileList):
         outputFileName = os.path.join(outputDirectory, rasterFile[1], className, chipName)
         ## Clip Image
-        print rasterFile
-        print outputFileName
+        print(rasterFile)
+        print(outputFileName)
         subprocess.call(["gdalwarp", "-te", "{}".format(minXCut), "{}".format(minYCut),  "{}".format(maxXCut),
                          "{}".format(maxYCut),
                          rasterFile[0], outputFileName])
@@ -1140,7 +1096,7 @@ def cutChipFromRasterCenter(rasterFileList, shapeFileSrc, outlineSrc='',
         featureGeom = feature.GetGeometryRef()
         cx, cy, cz = featureGeom.Centroid().GetPoint()
         polyCut = createPolygonFromCenterPoint(cx, cy, radiusMeters=clipSizeMeters)
-        print classFieldName
+        print(classFieldName)
         classDescription = feature.GetField(classFieldName)
         classDescription = classDescription.replace(" ","")
         envCut = polyCut.GetEnvelope()

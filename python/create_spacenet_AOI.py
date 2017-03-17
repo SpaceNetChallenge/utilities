@@ -2,7 +2,6 @@ from spaceNetUtilities import labelTools as lT
 import argparse
 import os
 import csv
-import glob
 
 if __name__ == '__main__':
 
@@ -82,10 +81,10 @@ if __name__ == '__main__':
 
     srcImageryList = []
     with open(args.srcRasterList, 'rb') as csvfile:
-        print args.srcRasterList
+        print(args.srcRasterList)
         csvreader = csv.reader(csvfile, delimiter=',')
         for row in csvreader:
-            print row
+            print(row)
             if row:
                 if not row[0].startswith("#"):
                     srcImageryList.append([x.strip() for x in row])
