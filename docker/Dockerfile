@@ -13,24 +13,24 @@ LABEL maintainer dlindenbaum
 #from osgeo import gdal, osr, ogr, gdalnumeric
 #from PIL import Image
 
-# Install External Libraries for Pillow
-apt-get install
-libjpeg
-zlib
-libtiff
-libfreetype
-littlecms
-libwebp
-openjpeg
-
-## install Python openCV
-libopencv-dev \
-python-opencv \
-python-numpy \
-python-pip \
-python-setuptools \
-gdal-bin \
-python-gdal
+## Install External Libraries for Pillow
+#apt-get install
+#libjpeg
+#zlib
+#libtiff
+#libfreetype
+#littlecms
+#libwebp
+#openjpeg
+#
+### install Python openCV
+#libopencv-dev \
+#python-opencv \
+#python-numpy \
+#python-pip \
+#python-setuptools \
+#gdal-bin \
+#python-gdal
 
 ## Install General Requirements
 RUN apt-get update && apt-get install -y --no-install-recommends \
