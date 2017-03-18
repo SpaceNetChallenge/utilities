@@ -43,9 +43,9 @@ python python/evaluateScene.py /path/to/SpaceNetTruthFile.csv \
 
 To make the Spacenet dataset easier to use we have created a tool createDataSpaceNet.py
 This tool currently supports the creation of datasets with annotation to support 3 Formats
-1. [PASCAL VOC2012] (http://host.robots.ox.ac.uk/pascal/VOC/)
-2. [Darknet] (https://pjreddie.com/darknet/yolo/)
-3. [Segmenation Boundaries Dataset (SBD)] (http://home.bharathh.info/pubs/codes/SBD/download.html)
+1. [PASCAL VOC2012](http://host.robots.ox.ac.uk/pascal/VOC/)
+2. [Darknet](https://pjreddie.com/darknet/yolo/)
+3. [Segmenation Boundaries Dataset (SBD)](http://home.bharathh.info/pubs/codes/SBD/download.html)
 
 It will create the appropriate annotation files and a summary trainval.txt and test.txt in the outputDirectory
 
