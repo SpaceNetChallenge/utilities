@@ -10,23 +10,29 @@ except:
     print("rtree not installed, Will break evaluation code")
 
 
-def import_summary_geojson(geojsonfilename):
+def import_summary_geojson(geojsonfilename, removeNoBuildings=True):
     # driver = ogr.GetDriverByName('geojson')
     datasource = ogr.Open(geojsonfilename, 0)
 
     layer = datasource.GetLayer()
     print(layer.GetFeatureCount())
 
-    polys = []
+    buildingList = []
     for idx, feature in enumerate(layer):
 
         poly = feature.GetGeometryRef()
 
         if poly:
-            polys.append({'ImageId': feature.GetField('ImageId'), 'BuildingId': feature.GetField('BuildingId'),
-                          'poly': feature.GetGeometryRef().Clone()})
+            if removeNoBuildings:
+                if feature.GetField('BuildingId') != -1:
+                    buildingList.append({'ImageId': feature.GetField('ImageId'), 'BuildingId': feature.GetField('BuildingId'),
+                                  'poly': feature.GetGeometryRef().Clone()})
+            else:
 
-    return polys
+                buildingList.append({'ImageId': feature.GetField('ImageId'), 'BuildingId': feature.GetField('BuildingId'),
+                              'poly': feature.GetGeometryRef().Clone()})
+
+    return buildingList
 
 
 def import_chip_geojson(geojsonfilename, ImageId=''):
@@ -70,7 +76,7 @@ def mergePolyList(geojsonfilename):
 
     return multipolygon
 
-def readwktcsv(csv_path):
+def readwktcsv(csv_path,removeNoBuildings=True):
     #
     # csv Format Expected = ['ImageId', 'BuildingId', 'PolygonWKT_Pix', 'PolygonWKT_Geo']
     # returns list of Dictionaries {'ImageId': image_id, 'BuildingId': building_id, 'poly': poly}
@@ -83,10 +89,22 @@ def readwktcsv(csv_path):
         building_reader = csv.reader(csvfile, delimiter=',', quotechar='"')
         next(building_reader, None)  # skip the headers
         for row in building_reader:
-            polyPix = ogr.CreateGeometryFromWkt(row[2])
-            polyGeo = ogr.CreateGeometryFromWkt(row[3])
-            buildinglist.append({'ImageId': row[0], 'BuildingId': int(row[1]), 'polyPix': polyPix,
-                                 'polyGeo': polyGeo})
+
+            if removeNoBuildings:
+                if int(row[1]) != -1:
+                    polyPix = ogr.CreateGeometryFromWkt(row[2])
+                    polyGeo = ogr.CreateGeometryFromWkt(row[3])
+                    buildinglist.append({'ImageId': row[0], 'BuildingId': int(row[1]), 'polyPix': polyPix,
+                                         'polyGeo': polyGeo,
+                                         })
+
+            else:
+
+                polyPix = ogr.CreateGeometryFromWkt(row[2])
+                polyGeo = ogr.CreateGeometryFromWkt(row[3])
+                buildinglist.append({'ImageId': row[0], 'BuildingId': int(row[1]), 'polyPix': polyPix,
+                                     'polyGeo': polyGeo,
+                                     })
 
     return buildinglist
 
