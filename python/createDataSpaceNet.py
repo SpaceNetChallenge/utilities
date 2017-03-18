@@ -6,7 +6,6 @@ from spaceNetUtilities import geoTools as gT
 import argparse
 
 
-
 def processRasterChip(rasterImage, rasterDescription, geojson, geojsonDescription, outputDirectory='',
                       imagePixSize=-1, clipOverlap=0.0, randomClip=False,
                       minpartialPerc=0.0,
@@ -50,7 +49,7 @@ def processRasterChip(rasterImage, rasterDescription, geojson, geojsonDescriptio
     return chipSummaryList
 
 
-def processChipSummaryList(chipSummaryList, outputDirectory='', annotationType='PASCAL VOC2012', outputFormat='GTiff',
+def processChipSummaryList(chipSummaryList, outputDirectory='', annotationType='PASCALVOC2012', outputFormat='GTiff',
                            outputPixType='',
                            datasetName='spacenetV2',
                            folder_name='folder_name'
@@ -72,27 +71,27 @@ def processChipSummaryList(chipSummaryList, outputDirectory='', annotationType='
 
 
 
-        if annotationType=='PASCAL VOC2012':
-            entry = lT.geoJsonToPascalVOC(annotationName, chipSummary['geoVectorName'], chipSummary['rasterSource'],
-                                          dataset='spacenetV2',
-                                          folder_name='spacenetV2',
-                                          annotationStyle=annotationType,
-                                          segment=True,
-                                          bufferSizePix=2.5,
-                                          convertTo8Bit=convertTo8Bit,
-                                          outputPixType=outputPixType
-                                          )
-        elif annotationType=='YOLO':
-            entry = lT.geoJsonToYolo(annotationName, chipSummary['geoVectorName'], chipSummary['rasterSource'],
-                                           dataset='spacenetV2',
-                                           folder_name='spacenetV2',
-                                           annotationStyle=annotationType,
-                                           convertTo8Bit=convertTo8Bit,
-                                           outputPixType=outputPixType,
-                                           outputFormat=outputFormat
-                                  )
+        if annotationType=='PASCALVOC2012':
+            entry = lT.geoJsonToPASCALVOC2012(annotationName, chipSummary['geoVectorName'], chipSummary['rasterSource'],
+                                              dataset='spacenetV2',
+                                              folder_name='spacenetV2',
+                                              annotationStyle=annotationType,
+                                              segment=True,
+                                              bufferSizePix=2.5,
+                                              convertTo8Bit=convertTo8Bit,
+                                              outputPixType=outputPixType
+                                              )
+        elif annotationType=='DARKNET':
+            entry = lT.geoJsonToDARKNET(annotationName, chipSummary['geoVectorName'], chipSummary['rasterSource'],
+                                        dataset='spacenetV2',
+                                        folder_name='spacenetV2',
+                                        annotationStyle=annotationType,
+                                        convertTo8Bit=convertTo8Bit,
+                                        outputPixType=outputPixType,
+                                        outputFormat=outputFormat
+                                        )
 
-        elif annotationType=='MNC':
+        elif annotationType=='SBD':
             basename = os.path.basename(chipSummary['rasterSource'])
             annotationName = basename.replace('.tif', '.mat')
             annotationName_cls = os.path.join(outputDirectory,'cls', annotationName)
@@ -104,15 +103,15 @@ def processChipSummaryList(chipSummaryList, outputDirectory='', annotationType='
             if not os.path.exists(os.path.join(outputDirectory,'inst')):
               os.makedirs(os.path.join(outputDirectory,'inst'))
             
-            entry = lT.geoJsonToMNC(annotationName_cls, annotationName_inst, chipSummary['geoVectorName'], chipSummary['rasterSource'],
-                                           dataset='spacenetV2',
-                                           folder_name='spacenetV2',
-                                           annotationStyle=annotationType,
-                                           segment=True,
-                                           convertTo8Bit=convertTo8Bit,
-                                           outputPixType=outputPixType,
-                                           outputFormat=outputFormat
-                                  )
+            entry = lT.geoJsonToSBD(annotationName_cls, annotationName_inst, chipSummary['geoVectorName'], chipSummary['rasterSource'],
+                                    dataset='spacenetV2',
+                                    folder_name='spacenetV2',
+                                    annotationStyle=annotationType,
+                                    segment=True,
+                                    convertTo8Bit=convertTo8Bit,
+                                    outputPixType=outputPixType,
+                                    outputFormat=outputFormat
+                                    )
         else:
             print("Annotation Type = {} is not supported yet".format(annotationType))
             return -1
@@ -123,7 +122,51 @@ def processChipSummaryList(chipSummaryList, outputDirectory='', annotationType='
 
         return entryList
 
+def createTrainTestSplitSummary(entryList, trainTestSplit=0.8,
+                                outputDirectory='',
+                                annotationSummaryPrefix='',
+                                annotationType='PASCALVOC2012',
+                                shuffleList=True,
+                           ):
 
+    if shuffleList:
+        random.shuffle(entryList)
+
+
+    splitPoint=int(round(len(entryList)*trainTestSplit))
+    trainvalList = entryList[0:splitPoint]
+    testList     = entryList[splitPoint+1:]
+
+
+    trainValFileName = os.path.join(outputDirectory, annotationSummaryPrefix+'trainval.txt')
+    print('creating trainval.txt {} entries'.format(len(trainvalList)))
+    print('Writing to TrainVal List to file: {}'.format(trainValFileName))
+    with open(trainValFileName, 'w') as f:
+        for entry in trainvalList:
+            if annotationType=='SBD':
+                f.write('{} {} {}\n'.format(entry['rasterFileName'], entry['annotationName_cls'],
+                                            entry['annotationName_inst']))
+            else:
+                f.write('{} {}\n'.format(entry['rasterFileName'], entry['annotationName']))
+
+
+    testFileName = os.path.join(outputDirectory, annotationSummaryPrefix+'test.txt')
+    testNameSizeFileName = os.path.join(outputDirectory, annotationSummaryPrefix + 'test_name_size.txt')
+    print('creating test.txt {} entries'.format(len(testList)))
+    print('Writing to Test List to file: {}'.format(testFileName))
+    with open(testFileName, 'w') as f, \
+            open(testNameSizeFileName, 'w') as fname:
+        for entry in testList:
+            if annotationType == 'SBD':
+                f.write('{} {} {}\n'.format(entry['rasterFileName'], entry['annotationName_cls'],
+                                            entry['annotationName_inst']))
+                fname.write('{} {} {}\n'.format(entry['basename'], entry['width'], entry['height']))
+            else:
+                f.write('{} {}\n'.format(entry['rasterFileName'], entry['annotationName']))
+                fname.write('{} {} {}\n'.format(entry['basename'], entry['width'], entry['height']))
+
+
+    return (trainValFileName, testFileName, testNameSizeFileName)
 
 if __name__ == '__main__':
 
@@ -133,45 +176,66 @@ if __name__ == '__main__':
 
     # python createDataSpaceNet.py /data/spacenet_sample/AOI_2_Vegas_Train/
     # RGB-PanSharpen --outputDirectory /data/spacenet_sample/annotations/ --imgSizePix 416
-    # --annotationType "PASCAL VOC2012" --convertTo8Bit
+    # --annotationType PASCALVOC2012 --convertTo8Bit
 
 
     # python createDataSpaceNet.py /data/spacenet_sample/AOI_2_Vegas_Train/
-    # RGB-PanSharpen --outputDirectory /data/spacenet_sample/annotations/ --imgSizePix 416 --annotationType "YOLO"
+    # RGB-PanSharpen --outputDirectory /data/spacenet_sample/annotations/ --imgSizePix 416 --annotationType DARKNET
     #  --convertTo8Bit
     parser = argparse.ArgumentParser(description='Process SrcData for Region ComputerVision Dataset')
-    parser.add_argument("srcSpaceNetFolder", help="location of Spacenet AOI Data i.e. '/path/to/AOI_2_Vegas")
-    parser.add_argument("srcImageryDirectory", help="folder to look for imagery in i.e. 'RGB-PanSharpen'")
-
-    parser.add_argument("--geoJsonDirectory", help="name of geojson folder typedirectory to use"
-                                            "i.e. 'buildings'",
+    parser.add_argument("srcSpaceNetFolder",
+                        help="location of Spacenet AOI Data i.e. '/path/to/AOI_2_Vegas")
+    parser.add_argument("--srcImageryDirectory",
+                        help="The Folder to look for imagery in"
+                             "i.e. RGB-PanSharpen",
+                        default='RGB-PanSharpen')
+    parser.add_argument("--geoJsonDirectory",
+                        help="name of geojson folder typedirectory to use"
+                             "i.e. 'buildings'",
                         default='buildings')
-    parser.add_argument("--outputDirectory", help="Location To place processed Files"
-                                                 "If not used output directory will be"
-                                                 "os.path.join(srcSpacenetFolder, 'annotations')",
-                                                default='annotations')
+    parser.add_argument("--outputDirectory",
+                        help="Location To place processed Files"
+                             "If not used output directory will be"
+                             "os.path.join(srcSpacenetFolder, 'annotations')",
+                        default='annotations')
+    parser.add_argument("--annotationSummaryPrefix",
+                        help="Prefix to attach to trainval.txt and test.txt",
+                        default='')
     parser.add_argument("--imgSizePix",
                         help="set the dimensions of the square image in pixels"
                              "Default is -1, images are not modified",
                         type=int,
                         default=-1)
+    parser.add_argument("--annotationType",
+                        help="Set the annotationType.  Currently Supported are:"
+                             "1.  PASCALVOC2012"
+                             "2.  DARKNET"
+                             "3.  SBD"
+                             "default is PASCALVOC2012",
+                        default='PASCALVOC2012')
     parser.add_argument("--outputFileType",
                         help="What type of image type would you like to output to currently supported are:"
                              "1. GTiff"
                              "2. JPEG",
                         default='GTiff')
-    parser.add_argument("--annotationType",
-                        help="Set the annotationType.  Currently Supported is YOLO and 'PASCAL VOC'"
-                             "default is 'PASCAL VOC'",
-                        default='PASCAL VOC2012')
     parser.add_argument("--convertTo8Bit",
                         help='Convert Image from Native format to 8bit',
                         action='store_true')
-
     parser.add_argument("--featureName",
-                        help='Type of feature to be summarized by csv (i.e. Building)',
+                        help='Type of feature to be summarized by csv (i.e. Building)'
+                             'Currently in SpaceNet V2 Building is only label',
                         type=str,
                         default='Buildings')
+    parser.add_argument("--spacenetVersion",
+                        help='Spacenet Version to process,  '
+                             'Version 1 supports AOI_1_RIO, '
+                             'Version 2 is AOI_2_Vegas-AOI_5_Khartoum',
+                        type=int,
+                        default=2)
+    parser.add_argument("--trainTestSplit",
+                        help='Decimal of data to use for training i.e. 0.8 = 80% of data for Training',
+                        type=float,
+                        default=0.8)
 
     args = parser.parse_args()
 
@@ -183,8 +247,13 @@ if __name__ == '__main__':
 
     listOfAOIs = [srcSpaceNetDirectory]
     srcImageryDirectory = args.srcImageryDirectory  # 'PAN', 'MUL, 'MUL-PanSharpen', 'RGB-PanSharpen'
-    geojsonDirectory = os.path.join('geojson', args.geoJsonDirectory) # 'geojson/buildings/'
-
+    if args.spacenetVersion == 2:
+        geojsonDirectory = os.path.join('geojson', args.geoJsonDirectory) # 'geojson/buildings/'
+    elif args.spacenetVersion == 1:
+        geojsonDirectory = os.path.join('vectordata','geojson')
+        # 'vectordata/geojson'
+    else:
+        print('Bad Spacenet Version Submitted,  Version {} is not supported'.foramt(args.spacenetVersion))
 
     if args.convertTo8Bit:
 
@@ -194,12 +263,6 @@ if __name__ == '__main__':
     else:
         outputDataType = ''
         outputFileType = ''
-
-
-
-
-
-
 
     if args.outputDirectory == 'annotations':
         fullPathAnnotationsDirectory = os.path.join(srcSpaceNetDirectory, 'annotations')
@@ -251,42 +314,11 @@ if __name__ == '__main__':
                 print(entryListTmp)
                 entryList.extend(entryListTmp)
 
-
-    random.shuffle(entryList)
-
-    splitPoint=int(round(len(entryList)*0.8))
-    trainvalList = entryList[0:splitPoint]
-    testList     = entryList[splitPoint+1:]
-
-
-    print('creating trainval.txt {} entries'.format(len(trainvalList)))
-    with open(os.path.join(fullPathAnnotationsDirectory, 'trainval.txt'), 'w') as f:
-        for entry in trainvalList:
-            f.write('{} {}\n'.format(entry['rasterFileName'], entry['annotationName']))
-
-    print('creating test.txt {} entries'.format(len(testList)))
-    with open(os.path.join(fullPathAnnotationsDirectory, 'test.txt'), 'w') as f, open(os.path.join(fullPathAnnotationsDirectory, 'test_name_size.txt'), 'w') as fname:
-        for entry in testList:
-            f.write('{} {}\n'.format(entry['rasterFileName'], entry['annotationName']))
-            fname.write('{} {} {}\n'.format(entry['basename'], entry['width'], entry['height']))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    createTrainTestSplitSummary(entryList,
+                                trainTestSplit=args.trainTestSplit,
+                                outputDirectory=fullPathAnnotationsDirectory,
+                                annotationSummaryPrefix=args.annotationSummaryPrefix,
+                                annotationType=args.annotationType,
+                                shuffleList=True
+                                )
 
