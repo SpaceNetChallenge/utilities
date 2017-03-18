@@ -499,15 +499,15 @@ def prettify(elem):
 
 
 
-def geoJsonToPascalVOC(xmlFileName, geoJson, rasterImageName, im_id='',
-                       dataset ='SpaceNet',
-                       folder_name='spacenet',
-                       annotationStyle = 'PASCAL VOC2012',
-                       segment=True,
-                       bufferSizePix=2.5,
-                       convertTo8Bit=True,
-                       outputPixType='Byte',
-                       outputFormat='GTiff'):
+def geoJsonToPASCALVOC2012(xmlFileName, geoJson, rasterImageName, im_id='',
+                           dataset ='SpaceNet',
+                           folder_name='spacenet',
+                           annotationStyle = 'PASCAL VOC2012',
+                           segment=True,
+                           bufferSizePix=2.5,
+                           convertTo8Bit=True,
+                           outputPixType='Byte',
+                           outputFormat='GTiff'):
 
     print("creating {}".format(xmlFileName))
     buildingList = gT.convert_wgs84geojson_to_pixgeojson(geoJson, rasterImageName, image_id=[], pixelgeojson=[], only_polygons=True,
@@ -715,15 +715,15 @@ def convert(size, box):
 
     return (x,y,w,h)
 
-def geoJsonToYolo(xmlFileName, geoJson, rasterImageName, im_id='',
-                       dataset ='SpaceNet',
-                       folder_name='spacenet',
-                       annotationStyle = 'YOLO',
-                       segment=True,
-                       bufferSizePix=2.5,
-                       convertTo8Bit=True,
-                       outputPixType='Byte',
-                       outputFormat='GTiff'):
+def geoJsonToDARKNET(xmlFileName, geoJson, rasterImageName, im_id='',
+                     dataset ='SpaceNet',
+                     folder_name='spacenet',
+                     annotationStyle = 'DARKNET',
+                     segment=True,
+                     bufferSizePix=2.5,
+                     convertTo8Bit=True,
+                     outputPixType='Byte',
+                     outputFormat='GTiff'):
     xmlFileName = xmlFileName.replace(".xml", ".txt")
     print("creating {}".format(xmlFileName))
 
@@ -1009,15 +1009,15 @@ def createInstanceCategories(vectorSrc):
 
 
 
-def geoJsonToMNC(annotationName_cls, annotationName_inst, geoJson, rasterSource,
-                                           dataset='spacenetV2',
-                                           folder_name='spacenetV2',
-                                           annotationStyle='',
-                                           segment=True,
-                                           convertTo8Bit='',
-                                           outputPixType='',
-                                           outputFormat=''
-                                  ):
+def geoJsonToSBD(annotationName_cls, annotationName_inst, geoJson, rasterSource,
+                 dataset='spacenetV2',
+                 folder_name='spacenetV2',
+                 annotationStyle='SBD',
+                 segment=True,
+                 convertTo8Bit='',
+                 outputPixType='',
+                 outputFormat=''
+                 ):
 
     #Print raster file name
     my_raster_source = rasterSource
@@ -1062,6 +1062,7 @@ def geoJsonToMNC(annotationName_cls, annotationName_inst, geoJson, rasterSource,
 
     entry = {'rasterFileName': my_raster_source,
              'geoJsonFileName': geoJson,
+             'annotationName' : annotationName_cls,
              'annotationName_cls': annotationName_cls,
              'annotationName_inst':annotationName_inst,
              'width': srcRaster.RasterXSize,
