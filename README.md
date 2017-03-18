@@ -32,11 +32,73 @@ Hints:
 * The images provided could contain anywhere from zero to multiple buildings.
 * All proposed polygons should be legitimate (they should have an area, they should have points that at least make a triangle instead of a point or a line, etc).
 * Use the [metric implementation code](https://github.com/SpaceNetChallenge/utilities/blob/master/python/evaluateScene.py) to self evaluate.
+To run the metric you can use the following command.
+```
+python python/evaluateScene.py /path/to/SpaceNetTruthFile.csv \
+                               /path/to/SpaceNetProposalFile.csv \
+                               --resultsOutputFile /path/to/SpaceNetResults.csv
+```
+
+## Data Transformation Code
+
+To make the Spacenet dataset easier to use we have created a tool createDataSpaceNet.py
+This tool currently supports the creation of datasets with annotation to support 3 Formats
+1. [PASCAL VOC2012] (http://host.robots.ox.ac.uk/pascal/VOC/)
+2. [Darknet] (https://pjreddie.com/darknet/yolo/)
+3. [Segmenation Boundaries Dataset (SBD)] (http://home.bharathh.info/pubs/codes/SBD/download.html)
+
+It will create the appropriate annotation files and a summary trainval.txt and test.txt in the outputDirectory
+
+### Create an PASCAL VOC2012 Compatiable Dataset
+The final product will have image dimensions of 420 pixels
+```
+python python/createDataSpaceNet.py /path/to/spacenet_sample/AOI_2_Vegas_Train/ \
+           RGB-PanSharpen \
+           --outputDirectory /path/to/spacenet_sample/annotations/ \
+           --annotationType PASCALVOC2012 \
+           --imgSizePix 400
+
+```
+### Changing the raster format
+Some GIS Images have 16-bit pixel values which openCV has trouble with.  createDataSpaceNet.py can convert the 16bit GeoTiff to an 8bit GeoTiff or 8bit JPEG 
+
+To create the 8bit GeoTiff
+```
+python python/createDataSpaceNet.py /path/to/spacenet_sample/AOI_2_Vegas_Train/ \
+           RGB-PanSharpen \
+           --outputDirectory /path/to/spacenet_sample/annotations/ \
+           --annotationType PASCALVOC2012 \
+           --convertTo8Bit \
+           --outputFileType GTiff \
+           --imgSizePix 400
+    
+```
+
+To create the 8bit JPEG
+```
+python python/createDataSpaceNet.py /path/to/spacenet_sample/AOI_2_Vegas_Train/ \
+           RGB-PanSharpen \
+           --outputDirectory /path/to/spacenet_sample/annotations/ \
+           --annotationType PASCALVOC2012 \
+           --convertTo8Bit \
+           --outputFileType JPEG \
+           --imgSizePix 400
+
+```
+
+For more Features
+```
+python python/createDataSpaceNet.py -h
+
+```
 
 
 
+## Use our Docker Container
+We have created two Docker files at /docker/standalone/cpu and /docker/standalone/gpu
+These Dockerfiles will build a docker container with all packages neccessary to run the package
 
-
+More documenation to follow
 
 
 ## Dependencies
