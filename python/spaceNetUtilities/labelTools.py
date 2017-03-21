@@ -739,7 +739,7 @@ def geoJsonToDARKNET(xmlFileName, geoJson, rasterImageName, im_id='',
     srcRaster = gdal.Open(rasterImageName)
     outputRaster = rasterImageName
     if convertTo8Bit:
-        cmd = ['gdal_translate', '-ot', outputPixType, '-of', outputFormat]
+        cmd = ['gdal_translate', '-ot', outputPixType, '-of', outputFormat, '-co', '"PHOTOMETRIC=rgb"']
         scaleList = []
         for bandId in range(srcRaster.RasterCount):
             bandId = bandId+1
