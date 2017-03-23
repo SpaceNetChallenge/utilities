@@ -114,13 +114,13 @@ def processChipSummaryList(chipSummaryList, outputDirectory='', annotationType='
                                     )
         else:
             print("Annotation Type = {} is not supported yet".format(annotationType))
-            return -1
+            break
 
 
 
         entryList.append(entry)
 
-        return entryList
+    return entryList
 
 def createTrainTestSplitSummary(entryList, trainTestSplit=0.8,
                                 outputDirectory='',
