@@ -1031,6 +1031,7 @@ def createclip(outputDirectory, rasterFileList, shapeSrcList,
         print(outputFileName)
         subprocess.call(["gdalwarp", "-te", "{}".format(minXCut), "{}".format(minYCut),  "{}".format(maxXCut),
                          "{}".format(maxYCut),
+                         '-co', 'PHOTOMETRIC=rgb',
                          rasterFile[0], outputFileName])
 
     baseLayerRasterName = os.path.join(outputDirectory, rasterFileList[0][1], className, chipNameList[0])
