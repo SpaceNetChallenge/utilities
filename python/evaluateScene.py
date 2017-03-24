@@ -66,7 +66,8 @@ def writeResultsToScreen(resultsDict):
 
 
 def evaluateSpaceNetSolution(summaryTruthFile, summaryProposalFile, resultsOutputFile='', processgeoJson=False,
-                             useParallelProcessing=False, minPolygonSize=0):
+                             useParallelProcessing=False, minPolygonSize=0,
+                             iouThreshold=0.5):
 
     truth_fp = summaryTruthFile
     test_fp = summaryProposalFile
@@ -139,7 +140,7 @@ def evaluateSpaceNetSolution(summaryTruthFile, summaryProposalFile, resultsOutpu
     if parallel == False:
         result_list = []
         for eval_input in eval_function_input_list:
-            result_list.append(eT.evalfunction(eval_input))
+            result_list.append(eT.evalfunction(eval_input,threshold=iouThreshold))
     else:
         result_list = p.map(eT.evalfunction, eval_function_input_list)
 
@@ -232,6 +233,11 @@ if __name__ == "__main__":
                              "The minimum for spacenet round 2 is 20 pixels",
                         type=int,
                         default=20)
+    parser.add_argument("--iouThreshold",
+                        help="The IOU threshold for a True Positive"
+                             "Spacenet uses 0.5",
+                        type=float,
+                        default=0.5)
 
     parser.add_argument("--resultsOutputFile",
                         help="If you would like summary data outwritten to a file, specify the file",
@@ -239,6 +245,7 @@ if __name__ == "__main__":
     parser.add_argument("--geoJson",
                         help='Convert Image from Native format to 8bit',
                         action='store_true')
+
 
     parser.add_argument("--useParallelProcessing",
                         help='Convert Image from Native format to 8bit',
@@ -252,7 +259,8 @@ if __name__ == "__main__":
                                            resultsOutputFile=args.resultsOutputFile,
                                            processgeoJson=args.geoJson,
                                            useParallelProcessing=args.useParallelProcessing,
-                                           minPolygonSize=args.polygonMinimumPixels)
+                                           minPolygonSize=args.polygonMinimumPixels,
+                                           iouThreshold=args.iouThreshold)
 
 
 
