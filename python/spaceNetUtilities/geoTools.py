@@ -76,7 +76,7 @@ def mergePolyList(geojsonfilename):
 
     return multipolygon
 
-def readwktcsv(csv_path,removeNoBuildings=True):
+def readwktcsv(csv_path,removeNoBuildings=True, groundTruthFile=True):
     #
     # csv Format Expected = ['ImageId', 'BuildingId', 'PolygonWKT_Pix', 'PolygonWKT_Geo']
     # returns list of Dictionaries {'ImageId': image_id, 'BuildingId': building_id, 'poly': poly}
@@ -93,7 +93,10 @@ def readwktcsv(csv_path,removeNoBuildings=True):
             if removeNoBuildings:
                 if int(row[1]) != -1:
                     polyPix = ogr.CreateGeometryFromWkt(row[2])
-                    polyGeo = ogr.CreateGeometryFromWkt(row[3])
+                    if groundTruthFile:
+                        polyGeo = ogr.CreateGeometryFromWkt(row[3])
+                    else:
+                        polyGeo = []
                     buildinglist.append({'ImageId': row[0], 'BuildingId': int(row[1]), 'polyPix': polyPix,
                                          'polyGeo': polyGeo,
                                          })
@@ -101,7 +104,10 @@ def readwktcsv(csv_path,removeNoBuildings=True):
             else:
 
                 polyPix = ogr.CreateGeometryFromWkt(row[2])
-                polyGeo = ogr.CreateGeometryFromWkt(row[3])
+                if groundTruthFile:
+                    polyGeo = ogr.CreateGeometryFromWkt(row[3])
+                else:
+                    polyGeo = []
                 buildinglist.append({'ImageId': row[0], 'BuildingId': int(row[1]), 'polyPix': polyPix,
                                      'polyGeo': polyGeo,
                                      })
