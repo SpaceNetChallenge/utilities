@@ -79,7 +79,8 @@ def processChipSummaryList(chipSummaryList, outputDirectory='', annotationType='
                                               segment=True,
                                               bufferSizePix=2.5,
                                               convertTo8Bit=convertTo8Bit,
-                                              outputPixType=outputPixType
+                                              outputPixType=outputPixType,
+                                              outputFormat=outputFormat
                                               )
         elif annotationType=='DARKNET':
             entry = lT.geoJsonToDARKNET(annotationName, chipSummary['geoVectorName'], chipSummary['rasterSource'],
