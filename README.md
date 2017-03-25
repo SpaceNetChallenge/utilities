@@ -53,7 +53,7 @@ It will create the appropriate annotation files and a summary trainval.txt and t
 The final product will have image dimensions of 420 pixels
 ```
 python python/createDataSpaceNet.py /path/to/spacenet_sample/AOI_2_Vegas_Train/ \
-           RGB-PanSharpen \
+           --srcImageryDirectory RGB-PanSharpen
            --outputDirectory /path/to/spacenet_sample/annotations/ \
            --annotationType PASCALVOC2012 \
            --imgSizePix 400
@@ -65,7 +65,7 @@ Some GIS Images have 16-bit pixel values which openCV has trouble with.  createD
 To create the 8bit GeoTiff
 ```
 python python/createDataSpaceNet.py /path/to/spacenet_sample/AOI_2_Vegas_Train/ \
-           RGB-PanSharpen \
+           --srcImageryDirectory RGB-PanSharpen
            --outputDirectory /path/to/spacenet_sample/annotations/ \
            --annotationType PASCALVOC2012 \
            --convertTo8Bit \
@@ -77,7 +77,7 @@ python python/createDataSpaceNet.py /path/to/spacenet_sample/AOI_2_Vegas_Train/ 
 To create the 8bit JPEG
 ```
 python python/createDataSpaceNet.py /path/to/spacenet_sample/AOI_2_Vegas_Train/ \
-           RGB-PanSharpen \
+           --srcImageryDirectory RGB-PanSharpen
            --outputDirectory /path/to/spacenet_sample/annotations/ \
            --annotationType PASCALVOC2012 \
            --convertTo8Bit \
