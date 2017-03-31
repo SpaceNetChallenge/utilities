@@ -595,7 +595,6 @@ def geoJsonToPASCALVOC2012(xmlFileName, geoJson, rasterImageName, im_id='',
         ymax=env[3]
 
         if bboxResize != 1.0:
-            print('Resize')
             xCenter = (xmin+xmax)/2
             yCenter = (ymin+ymax)/2
             bboxNewHalfHeight = ((ymax-ymin)/2)*bboxResize
@@ -801,7 +800,6 @@ def geoJsonToDARKNET(xmlFileName, geoJson, rasterImageName, im_id='',
                 ymin = boxDim[2]
                 xmax = boxDim[1]
                 ymax = boxDim[3]
-                print('Resize')
                 xCenter = (xmin + xmax) / 2
                 yCenter = (ymin + ymax) / 2
                 bboxNewHalfHeight = ((ymax - ymin) / 2) * bboxResize
