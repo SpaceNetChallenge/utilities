@@ -507,7 +507,8 @@ def geoJsonToPASCALVOC2012(xmlFileName, geoJson, rasterImageName, im_id='',
                            bufferSizePix=2.5,
                            convertTo8Bit=True,
                            outputPixType='Byte',
-                           outputFormat='GTiff'):
+                           outputFormat='GTiff',
+                           bboxResize=1.0):
 
     print("creating {}".format(xmlFileName))
     buildingList = gT.convert_wgs84geojson_to_pixgeojson(geoJson, rasterImageName, image_id=[], pixelgeojson=[], only_polygons=True,
@@ -586,8 +587,26 @@ def geoJsonToPASCALVOC2012(xmlFileName, geoJson, rasterImageName, im_id='',
         objectPose = 'Left'
         objectTruncated = 0  # 1=True, 0 = False
         objectDifficulty = 0  # 0 Easy - 3 Hard
-        # Get Envelope returns a tuple (minX, maxX, minY, maxY)
+
         env = building['polyPix'].GetEnvelope()
+        xmin=env[0]
+        ymin=env[2]
+        xmax=env[1]
+        ymax=env[3]
+
+        if bboxResize != 1.0:
+            print('Resize')
+            xCenter = (xmin+xmax)/2
+            yCenter = (ymin+ymax)/2
+            bboxNewHalfHeight = ((ymax-ymin)/2)*bboxResize
+            bboxNewHalfWidth  = ((ymax - ymin) / 2)*bboxResize
+            xmin = xCenter - bboxNewHalfWidth
+            xmax = xCenter + bboxNewHalfWidth
+            ymin = yCenter - bboxNewHalfHeight
+            ymax = yCenter + bboxNewHalfHeight
+
+        # Get Envelope returns a tuple (minX, maxX, minY, maxY)
+
 
         childObject = SubElement(top, 'object')
         SubElement(childObject, 'name').text = objectType
@@ -596,10 +615,10 @@ def geoJsonToPASCALVOC2012(xmlFileName, geoJson, rasterImageName, im_id='',
         SubElement(childObject, 'difficult').text = str(objectDifficulty)
         # write bounding box
         childBoundBox = SubElement(childObject, 'bndbox')
-        SubElement(childBoundBox, 'xmin').text = str(int(round(env[0])))
-        SubElement(childBoundBox, 'ymin').text = str(int(round(env[2])))
-        SubElement(childBoundBox, 'xmax').text = str(int(round(env[1])))
-        SubElement(childBoundBox, 'ymax').text = str(int(round(env[3])))
+        SubElement(childBoundBox, 'xmin').text = str(int(round(xmin)))
+        SubElement(childBoundBox, 'ymin').text = str(int(round(ymin)))
+        SubElement(childBoundBox, 'xmax').text = str(int(round(xmax)))
+        SubElement(childBoundBox, 'ymax').text = str(int(round(ymax)))
 
     with open(xmlFileName, 'w') as f:
         f.write(prettify(top))
@@ -700,7 +719,7 @@ def geoJsonToPASCALVOC2012(xmlFileName, geoJson, rasterImageName, im_id='',
 
     return entry
 
-def convert(size, box):
+def convertPixDimensionToPercent(size, box):
     '''Input = image size: (w,h), box: [x0, x1, y0, y1]'''
     dw = 1./size[0]
     dh = 1./size[1]
@@ -723,7 +742,8 @@ def geoJsonToDARKNET(xmlFileName, geoJson, rasterImageName, im_id='',
                      bufferSizePix=2.5,
                      convertTo8Bit=True,
                      outputPixType='Byte',
-                     outputFormat='GTiff'):
+                     outputFormat='GTiff',
+                     bboxResize=1.0):
     xmlFileName = xmlFileName.replace(".xml", ".txt")
     print("creating {}".format(xmlFileName))
 
@@ -775,9 +795,22 @@ def geoJsonToDARKNET(xmlFileName, geoJson, rasterImageName, im_id='',
             # Get Envelope returns a tuple (minX, maxX, minY, maxY)
 
             boxDim = building['polyPix'].GetEnvelope()
+            if bboxResize != 1.0:
+                print('Resize')
+                xCenter = (xmin + xmax) / 2
+                yCenter = (ymin + ymax) / 2
+                bboxNewHalfHeight = ((ymax - ymin) / 2) * bboxResize
+                bboxNewHalfWidth = ((ymax - ymin) / 2) * bboxResize
+                xmin = xCenter - bboxNewHalfWidth
+                xmax = xCenter + bboxNewHalfWidth
+                ymin = yCenter - bboxNewHalfHeight
+                ymax = yCenter + bboxNewHalfHeight
+
+                boxDim = [xmin, xmax, ymin, ymax]
+
             rasterSize = (srcRaster.RasterXSize, srcRaster.RasterYSize)
 
-            lineOutput = convert(rasterSize, boxDim)
+            lineOutput = convertPixDimensionToPercent(rasterSize, boxDim)
             classNum=0
             f.write('{} {} {} {} {}\n'.format(classNum,
                                              lineOutput[0],

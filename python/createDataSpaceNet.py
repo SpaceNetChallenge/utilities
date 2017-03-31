@@ -52,7 +52,8 @@ def processRasterChip(rasterImage, rasterDescription, geojson, geojsonDescriptio
 def processChipSummaryList(chipSummaryList, outputDirectory='', annotationType='PASCALVOC2012', outputFormat='GTiff',
                            outputPixType='',
                            datasetName='spacenetV2',
-                           folder_name='folder_name'
+                           folder_name='folder_name',
+                           bboxResize=1.0
                            ):
 
     if outputPixType == '':
@@ -80,7 +81,8 @@ def processChipSummaryList(chipSummaryList, outputDirectory='', annotationType='
                                               bufferSizePix=2.5,
                                               convertTo8Bit=convertTo8Bit,
                                               outputPixType=outputPixType,
-                                              outputFormat=outputFormat
+                                              outputFormat=outputFormat,
+                                              bboxResize=bboxResize
                                               )
         elif annotationType=='DARKNET':
             entry = lT.geoJsonToDARKNET(annotationName, chipSummary['geoVectorName'], chipSummary['rasterSource'],
@@ -89,7 +91,8 @@ def processChipSummaryList(chipSummaryList, outputDirectory='', annotationType='
                                         annotationStyle=annotationType,
                                         convertTo8Bit=convertTo8Bit,
                                         outputPixType=outputPixType,
-                                        outputFormat=outputFormat
+                                        outputFormat=outputFormat,
+                                        bboxResize=bboxResize
                                         )
 
         elif annotationType=='SBD':
@@ -111,7 +114,8 @@ def processChipSummaryList(chipSummaryList, outputDirectory='', annotationType='
                                     segment=True,
                                     convertTo8Bit=convertTo8Bit,
                                     outputPixType=outputPixType,
-                                    outputFormat=outputFormat
+                                    outputFormat=outputFormat,
+                                    bboxResize=bboxResize
                                     )
         else:
             print("Annotation Type = {} is not supported yet".format(annotationType))
@@ -237,6 +241,11 @@ if __name__ == '__main__':
                         help='Decimal of data to use for training i.e. 0.8 = 80% of data for Training',
                         type=float,
                         default=0.8)
+    parser.add_argument("--boundingBoxResize",
+                        help='Decimal Resize Annotation, i.e 0.8 = shrink annotation by 20 percent'
+                             'default is 1.0',
+                        type=float,
+                        default=1.0)
 
     args = parser.parse_args()
 
@@ -302,7 +311,8 @@ if __name__ == '__main__':
                                                     outputDirectory=fullPathAnnotationsDirectory,
                                                     imagePixSize=args.imgSizePix, clipOverlap=0.0, randomClip=False,
                                                     minpartialPerc=0.0,
-                                                    outputPrefix='')
+                                                    outputPrefix=''
+                                                    )
 
                 entryListTmp = processChipSummaryList(chipSummaryList,
                                                       outputDirectory=os.path.join(fullPathAnnotationsDirectory, 'annotations'),
@@ -310,7 +320,8 @@ if __name__ == '__main__':
                                                       outputFormat=outputFileType,
                                                       outputPixType=outputDataType,
                                                       datasetName='spacenetV2',
-                                                      folder_name='folder_name'
+                                                      folder_name='folder_name',
+                                                      bboxResize= args.boundingBoxResize
                                        )
                 print(entryListTmp)
                 entryList.extend(entryListTmp)
