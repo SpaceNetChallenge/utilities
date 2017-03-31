@@ -795,7 +795,12 @@ def geoJsonToDARKNET(xmlFileName, geoJson, rasterImageName, im_id='',
             # Get Envelope returns a tuple (minX, maxX, minY, maxY)
 
             boxDim = building['polyPix'].GetEnvelope()
+
             if bboxResize != 1.0:
+                xmin = boxDim[0]
+                ymin = boxDim[2]
+                xmax = boxDim[1]
+                ymax = boxDim[3]
                 print('Resize')
                 xCenter = (xmin + xmax) / 2
                 yCenter = (ymin + ymax) / 2
