@@ -58,6 +58,7 @@ if __name__ == "__main__":
         geojsonlist = glob.glob(fullDirectory)
 
         for geoJsonFileName in geojsonlist:
+            print(geoJsonFileName)
             dataRowList.append(processGeoJson(geoJsonFileName, pixelSizeM=0.3, pixelSizeDeg=0.000002700000000))
 
 
