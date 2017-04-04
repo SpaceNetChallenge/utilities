@@ -24,6 +24,7 @@ row = ['ImageId', 'Count'
 def processGeoJson(geoJsonFileName, pixelSizeM = 0.3, pixelSizeDeg=0.000002700000000):
     df = gpd.read_file(geoJsonFileName)
     ImageId = os.path.basename(geoJsonFileName)
+    ImageId = os.path.splitext(ImageId)[0]
     ImageId = ImageId.split('_', 1)[1]
     dataRow = [ImageId]
 
