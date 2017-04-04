@@ -54,7 +54,7 @@ if __name__ == "__main__":
 
     dataRowList = []
     for directory in directoryList:
-        fullDirectory = os.path.join(inputDirectory, directory, 'geojson', 'buildings', '*.geojson')
+        fullDirectory = os.path.join(inputDirectory, directory[0], 'geojson', 'buildings', '*.geojson')
         geojsonlist = glob.glob(fullDirectory)
 
         for geoJsonFileName in geojsonlist:
