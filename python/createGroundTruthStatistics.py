@@ -23,14 +23,16 @@ row = ['ImageId', 'Count'
        ]
 def processGeoJson(geoJsonFileName, pixelSizeM = 0.3, pixelSizeDeg=0.000002700000000):
     df = gpd.read_file(geoJsonFileName)
-    dfArea = (df.area * (pixelSizeM ** 2) / (pixelSizeDeg ** 2))
     ImageId = os.path.basename(geoJsonFileName)
-    ImageId = ImageId.split('_',1)[1]
+    ImageId = ImageId.split('_', 1)[1]
     dataRow = [ImageId]
-    dataRow.append(dfArea.sum)
-    dataRow.extend(dfArea.describe().values)
-    dataRow.extend(df['partialDec'].describe().values[1:])
-    dataRow.extend(df['partialBuilding'].describe().values[1:])
+
+    if not df.size == 0:
+        dfArea = (df.area * (pixelSizeM ** 2) / (pixelSizeDeg ** 2))
+        dataRow.append(dfArea.sum)
+        dataRow.extend(dfArea.describe().values)
+        dataRow.extend(df['partialDec'].describe().values[1:])
+        dataRow.extend(df['partialBuilding'].describe().values[1:])
 
     return dataRow
 
