@@ -27,7 +27,7 @@ def processGeoJson(geoJsonFileName, pixelSizeM = 0.3, pixelSizeDeg=0.00000270000
     ImageId = os.path.basename(geoJsonFileName)
     ImageId = ImageId.split('_',1)[1]
     dataRow = [ImageId]
-    dataRow.extend(dfArea.sum)
+    dataRow.append(dfArea.sum)
     dataRow.extend(dfArea.describe().values)
     dataRow.extend(df['partialDec'].describe().values[1:])
     dataRow.extend(df['partialBuilding'].describe().values[1:])
