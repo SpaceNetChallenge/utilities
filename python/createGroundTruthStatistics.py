@@ -29,7 +29,7 @@ def processGeoJson(geoJsonFileName, pixelSizeM = 0.3, pixelSizeDeg=0.00000270000
 
     if not df.size == 0:
         dfArea = (df.area * (pixelSizeM ** 2) / (pixelSizeDeg ** 2))
-        dataRow.append(dfArea.sum)
+        dataRow.append(dfArea.sum())
         dataRow.extend(dfArea.describe().values)
         dataRow.extend(df['partialDec'].describe().values[1:])
         dataRow.extend(df['partialBuilding'].describe().values[1:])
