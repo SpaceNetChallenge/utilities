@@ -42,6 +42,8 @@ def writePerChipToCSV(resultsDictList, csvwriter):
 
 
 
+
+
 def writeResultsToScreen(resultsDict):
 
     print('AOI of Interest', resultsDict['AOI_Name'])

@@ -47,7 +47,7 @@ if __name__ == "__main__":
                  ['AOI_4_Shanghai_Train', 0.000002700000000],
                  ['AOI_5_Khartoum_Train', 0.000002700000000]]
 
-    row = ['ImageId', 'Count', 'Area_Sum',
+    row = ['ImageId',  'Area_Sum', 'Count',
                       'Area_Mean', 'Area_std', 'Area_min', 'Area_25per', 'Area_50per', 'Area_75per', 'Area_max',
            'PartialDec_Mean', 'PartialDec_std', 'PartialDec_min', 'PartialDec_25per', 'PartialDec_50per',
            'PartialDec_75per', 'PartialDec_max',
