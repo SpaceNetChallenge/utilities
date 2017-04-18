@@ -649,7 +649,7 @@ def geoJsonToPASCALVOC2012(xmlFileName, geoJson, rasterImageName, im_id='',
             print(geomBufferIn.IsEmpty())
             print(geomBufferIn.IsSimple())
 
-            if not geomBufferIn.IsEmpty():
+            if geomBufferIn.GetArea()>0.0:
                 outBufFeature = ogr.Feature(featureDefn)
                 outBufFeature.SetGeometry(geomBufferOut)
 
