@@ -491,7 +491,7 @@ def geoWKTToPixelWKT(geom, inputRaster, targetSR, geomTransform, pixPrecision=2)
 
         for poly in geom:
             polygonPix = ogr.Geometry(ogr.wkbPolygon)
-            for ring in geom:
+            for ring in poly:
                 # GetPoint returns a tuple not a Geometry
                 ringPix = ogr.Geometry(ogr.wkbLinearRing)
 
