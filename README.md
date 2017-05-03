@@ -102,7 +102,7 @@ More documenation to follow
 
 
 ## Dependencies
-All dependencies can be found in [requirements.txt](./python/requirements.txt)
+All dependencies can be found in the docker file [Dockerfile](./docker/standalone/gpu/Dockerfile)
 
 ## License
 See [LICENSE](./LICENSE).
