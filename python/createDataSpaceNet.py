@@ -107,17 +107,10 @@ def processChipSummaryList(chipSummaryList, outputDirectory='', annotationType='
             if not os.path.exists(os.path.join(outputDirectory,'inst')):
               os.makedirs(os.path.join(outputDirectory,'inst'))
             
-            entry = lT.geoJsonToSBD(annotationName_cls, annotationName_inst, chipSummary['geoVectorName'], chipSummary['rasterSource'],
-                                    dataset='spacenetV2',
-                                    folder_name='spacenetV2',
-                                    annotationStyle=annotationType,
-                                    segment=True,
-                                    convertTo8Bit=convertTo8Bit,
-                                    outputPixType=outputPixType,
-                                    outputFormat=outputFormat,
-                                    bboxResize=bboxResize
-                                    )
+            entry = lT.geoJsonToSBD(annotationName_cls, annotationName_inst, chipSummary['geoVectorName'], chipSummary['rasterSource'])
+
         else:
+
             print("Annotation Type = {} is not supported yet".format(annotationType))
             break
 
