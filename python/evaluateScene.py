@@ -223,7 +223,7 @@ def evaluateSpaceNetSolution(summaryTruthFile, summaryProposalFile, resultsOutpu
             writePerChipToCSV(resultsDictList, csvwriter)
 
 
-        combineGeoJsonAndConvertToWGS84(resultsOutputFile, rasterLocationList=['/Users/dlindenbaum/dataStorage/spacenetV2_Test/PAN/'])
+
 
 
 
@@ -237,10 +237,10 @@ def combineGeoJsonAndConvertToWGS84(baseName, rasterLocationList,
                                              'AOI_2_Vegas',
                                              'AOI_3_Paris',
                                              'AOI_4_Shanghai',
-                                             'AOI_5_Khartoum']
-                                    ):
+                                             'AOI_5_Khartoum'],
+                                    removeGeoJsonAfter=True):
     srcBaseName = os.path.splitext(baseName)[0]
-    geoJsonList = glob.glob(srcBaseName+"_*")
+    geoJsonList = glob.glob(srcBaseName+"_*.geojson")
     print geoJsonList
 
     rasterList = []
@@ -253,7 +253,7 @@ def combineGeoJsonAndConvertToWGS84(baseName, rasterLocationList,
         AOIgeoJsonList = [s for i, s in enumerate(geoJsonList) if AOI in s]
         AOIimageList   = [s for i, s in enumerate(rasterList) if AOI in s]
 
-        print AOIimageList
+        #print AOIimageList
         outShapeFile = srcBaseName+"_"+AOI+"Summary.shp"
         outDriver = ogr.GetDriverByName("ESRI Shapefile")
         # Remove output shapefile if it already exists
@@ -283,7 +283,7 @@ def combineGeoJsonAndConvertToWGS84(baseName, rasterLocationList,
 
             if len(rasterName)>0:
                 rasterName = rasterName[0]
-                print rasterName
+                #print rasterName
                 inDataSource = ogr.Open(AOIgeoJson, 0)
                 inLayer = inDataSource.GetLayer()
 
@@ -303,17 +303,19 @@ def combineGeoJsonAndConvertToWGS84(baseName, rasterLocationList,
                     #print geom.ExportToWkt()
                     # [GeoWKT, PixWKT])
                     geomList = gT.pixelGeomToGeoGeom(geom, rasterName, targetSR='', geomTransform='', breakMultiPolygonPix=False)
-                    print geomList[0][0].ExportToWkt()
+                    #print geomList[0][0].ExportToWkt()
                     outFeature.SetGeometry(geomList[0][0])
 
                     # Add new feature to output Layer
                     outLayer.CreateFeature(outFeature)
                     outFeature = None
-                    #inFeature = None
+                    inFeature = None
 
 
 
-
+    if removeGeoJsonAfter:
+        for f in geoJsonList:
+            os.remove(f)
 
 
 
@@ -368,6 +370,12 @@ if __name__ == "__main__":
                         help='Convert Image from Native format to 8bit',
                         action='store_true')
 
+    parser.add_argument("--rasterLocation",
+                        help='Image Directory List',
+                        action='append',
+                        default=[]
+                        )
+
     args = parser.parse_args()
     # load Truth and Test File Locations
     AOIList = ['Total',
@@ -376,9 +384,10 @@ if __name__ == "__main__":
                'AOI_3_Paris',
                'AOI_4_Shanghai',
                'AOI_5_Khartoum']
+    resultsOutputFile = args.resultsOutputFile
     summaryDict = evaluateSpaceNetSolution(args.summaryTruthFile,
                                            args.summaryProposalFile,
-                                           resultsOutputFile=args.resultsOutputFile,
+                                           resultsOutputFile=resultsOutputFile,
                                            processgeoJson=args.geoJson,
                                            useParallelProcessing=args.useParallelProcessing,
                                            minPolygonSize=args.polygonMinimumPixels,
@@ -386,6 +395,10 @@ if __name__ == "__main__":
                                            AOIList=AOIList)
 
 
+
+    if resultsOutputFile != '':
+        combineGeoJsonAndConvertToWGS84(resultsOutputFile,
+                                        rasterLocationList=args.rasterLocation)
 
 
 
