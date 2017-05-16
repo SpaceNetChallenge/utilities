@@ -5,6 +5,9 @@ import csv
 import multiprocessing
 import time
 import argparse
+import os
+import glob
+from osgeo import ogr, osr, gdal
 
 def writeAOISummaryToCSV(resultsDict,csvwriter):
 
@@ -69,7 +72,14 @@ def writeResultsToScreen(resultsDict):
 
 def evaluateSpaceNetSolution(summaryTruthFile, summaryProposalFile, resultsOutputFile='', processgeoJson=False,
                              useParallelProcessing=False, minPolygonSize=0,
-                             iouThreshold=0.5):
+                             iouThreshold=0.5,
+                             AOIList=['Total',
+                                      'AOI_1_Rio',
+                                      'AOI_2_Vegas',
+                                      'AOI_3_Paris',
+                                      'AOI_4_Shanghai',
+                                      'AOI_5_Khartoum']
+                             ):
 
     truth_fp = summaryTruthFile
     test_fp = summaryProposalFile
@@ -142,14 +152,19 @@ def evaluateSpaceNetSolution(summaryTruthFile, summaryProposalFile, resultsOutpu
     if parallel == False:
         result_list = []
         for eval_input in eval_function_input_list:
-            result_list.append(eT.evalfunction(eval_input,threshold=iouThreshold))
+            if resultsOutputFile != '':
+                result_list.append(eT.evalfunction(eval_input,
+                                                   resultGeoJsonName=os.path.splitext(resultsOutputFile)[0]+"_"+eval_input[0]+".geojson",
+                                                   threshold=iouThreshold))
+            else:
+                result_list.append(eT.evalfunction(eval_input,
+                                                   threshold=iouThreshold))
     else:
         result_list = p.map(eT.evalfunction, eval_function_input_list)
 
     result_listNP = np.asarray([item[0] for item in result_list])
     result_listName = [item[1] for item in result_list]
     AOIIndexList = []
-    AOIList = ['Total', 'AOI_1_Rio', 'AOI_2_Vegas', 'AOI_3_Paris', 'AOI_4_Shanghai', 'AOI_5_Khartoum']
     resultsDictList = []
     for AOI in AOIList:
         if AOI !='Total':
@@ -208,9 +223,110 @@ def evaluateSpaceNetSolution(summaryTruthFile, summaryProposalFile, resultsOutpu
             writePerChipToCSV(resultsDictList, csvwriter)
 
 
+        combineGeoJsonAndConvertToWGS84(resultsOutputFile, rasterLocationList=['/Users/dlindenbaum/dataStorage/spacenetV2_Test/PAN/'])
+
+
 
 
     return resultsDictList
+
+
+def combineGeoJsonAndConvertToWGS84(baseName, rasterLocationList,
+                                    AOIList=['Total',
+                                             'AOI_1_Rio',
+                                             'AOI_2_Vegas',
+                                             'AOI_3_Paris',
+                                             'AOI_4_Shanghai',
+                                             'AOI_5_Khartoum']
+                                    ):
+    srcBaseName = os.path.splitext(baseName)[0]
+    geoJsonList = glob.glob(srcBaseName+"_*")
+    print geoJsonList
+
+    rasterList = []
+    for rasterLocation in rasterLocationList:
+        rasterList.extend(glob.glob(os.path.join(rasterLocation, '*.tif')))
+
+
+
+    for AOI in AOIList:
+        AOIgeoJsonList = [s for i, s in enumerate(geoJsonList) if AOI in s]
+        AOIimageList   = [s for i, s in enumerate(rasterList) if AOI in s]
+
+        print AOIimageList
+        outShapeFile = srcBaseName+"_"+AOI+"Summary.shp"
+        outDriver = ogr.GetDriverByName("ESRI Shapefile")
+        # Remove output shapefile if it already exists
+        if os.path.exists(outShapeFile):
+            outDriver.DeleteDataSource(outShapeFile)
+        outDataSource = outDriver.CreateDataSource(outShapeFile)
+        srs = osr.SpatialReference()
+        srs.ImportFromEPSG(4326)
+        outLayer = outDataSource.CreateLayer("AOI_Results", srs, geom_type=ogr.wkbPolygon)
+
+        inDataSource = ogr.Open(geoJsonList[0], 0)
+        inLayer = inDataSource.GetLayer()
+        # Add input Layer Fields to the output Layer
+        inLayerDefn = inLayer.GetLayerDefn()
+        for i in range(0, inLayerDefn.GetFieldCount()):
+            fieldDefn = inLayerDefn.GetFieldDefn(i)
+            outLayer.CreateField(fieldDefn)
+        # Get the output Layer's Feature Definition
+        outLayerDefn = outLayer.GetLayerDefn()
+
+        inLayerDefn = 0
+        inLayer = 0
+        inDataSource = 0
+        for AOIgeoJson in AOIgeoJsonList:
+            imageId = AOIgeoJson.replace(srcBaseName+'_', "").replace('.geojson', '')
+            rasterName = [s for i, s in enumerate(AOIimageList) if imageId in s]
+
+            if len(rasterName)>0:
+                rasterName = rasterName[0]
+                print rasterName
+                inDataSource = ogr.Open(AOIgeoJson, 0)
+                inLayer = inDataSource.GetLayer()
+
+                targetRaster = gdal.Open(rasterName)
+                geomTransform = targetRaster.GetGeoTransform()
+
+                for i in range(0, inLayer.GetFeatureCount()):
+                    # Get the input Feature
+                    inFeature = inLayer.GetFeature(i)
+                    # Create output Feature
+                    outFeature = ogr.Feature(outLayerDefn)
+                    # Add field values from input Layer
+                    for i in range(0, outLayerDefn.GetFieldCount()):
+                        outFeature.SetField(outLayerDefn.GetFieldDefn(i).GetNameRef(), inFeature.GetField(i))
+                    # Set geometry as centroid
+                    geom = inFeature.GetGeometryRef()
+                    #print geom.ExportToWkt()
+                    # [GeoWKT, PixWKT])
+                    geomList = gT.pixelGeomToGeoGeom(geom, rasterName, targetSR='', geomTransform='', breakMultiPolygonPix=False)
+                    print geomList[0][0].ExportToWkt()
+                    outFeature.SetGeometry(geomList[0][0])
+
+                    # Add new feature to output Layer
+                    outLayer.CreateFeature(outFeature)
+                    outFeature = None
+                    #inFeature = None
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 if __name__ == "__main__":
@@ -245,9 +361,8 @@ if __name__ == "__main__":
                         help="If you would like summary data outwritten to a file, specify the file",
                         default='')
     parser.add_argument("--geoJson",
-                        help='Convert Image from Native format to 8bit',
+                        help='results Submitted are in geoJson Format',
                         action='store_true')
-
 
     parser.add_argument("--useParallelProcessing",
                         help='Convert Image from Native format to 8bit',
@@ -255,14 +370,22 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     # load Truth and Test File Locations
-
+    AOIList = ['Total',
+               'AOI_1_Rio',
+               'AOI_2_Vegas',
+               'AOI_3_Paris',
+               'AOI_4_Shanghai',
+               'AOI_5_Khartoum']
     summaryDict = evaluateSpaceNetSolution(args.summaryTruthFile,
                                            args.summaryProposalFile,
                                            resultsOutputFile=args.resultsOutputFile,
                                            processgeoJson=args.geoJson,
                                            useParallelProcessing=args.useParallelProcessing,
                                            minPolygonSize=args.polygonMinimumPixels,
-                                           iouThreshold=args.iouThreshold)
+                                           iouThreshold=args.iouThreshold,
+                                           AOIList=AOIList)
+
+
 
 
 
