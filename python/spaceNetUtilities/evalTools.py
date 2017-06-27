@@ -97,7 +97,7 @@ def score(test_polys, truth_polys, threshold=0.5, truth_index=[],
                 if resultGeoJsonName:
                     feature = ogr.Feature(layer.GetLayerDefn())
                     feature.SetField('ImageId', imageId)
-                    feature.SetField('BuildingId', 0)
+                    feature.SetField('BuildingId', -1)
                     feature.SetField('IOUScore', maxiou)
                     feature.SetGeometry(test_poly)
 
