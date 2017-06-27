@@ -407,67 +407,68 @@ def pixelGeomToGeoGeom(geom, inputRaster, targetSR='', geomTransform='', breakMu
 
     polygonGeoBufferWKTList = []
     polygonGeoBufferList = []
-    if geom.GetGeometryName() == 'POLYGON':
-        polygonGeo = ogr.Geometry(ogr.wkbPolygon)
-        for ring in geom:
-            # GetPoint returns a tuple not a Geometry
-            ringGeo = ogr.Geometry(ogr.wkbLinearRing)
-
-            for pIdx in xrange(ring.GetPointCount()):
-                xPix, yPix, zPix = ring.GetPoint(pIdx)
-                #xPix, yPix = latlon2pixel(lat, lon, inputRaster, targetSR, geomTransform)
-                lon, lat = pixelToGeoCoord(xPix, yPix, inputRaster=inputRaster, targetSR=targetSR, geomTransform=geomTransform)
-
-                ringGeo.AddPoint(lon, lat)
-
-
-            polygonGeo.AddGeometry(ringGeo)
-        polygonGeoBuffer = polygonGeo.Buffer(0.0)
-        polygonGeoBufferList.append([polygonGeoBuffer, geom])
-
-    elif geom.GetGeometryName() == 'MULTIPOLYGON':
-
-        for poly in geom:
+    if geom:
+        if geom.GetGeometryName() == 'POLYGON':
             polygonGeo = ogr.Geometry(ogr.wkbPolygon)
-            for ring in poly:
+            for ring in geom:
                 # GetPoint returns a tuple not a Geometry
                 ringGeo = ogr.Geometry(ogr.wkbLinearRing)
 
                 for pIdx in xrange(ring.GetPointCount()):
                     xPix, yPix, zPix = ring.GetPoint(pIdx)
-                    # xPix, yPix = latlon2pixel(lat, lon, inputRaster, targetSR, geomTransform)
-                    lon, lat = pixelToGeoCoord(xPix, yPix, inputRaster=inputRaster, targetSR=targetSR,
-                                               geomTransform=geomTransform)
+                    #xPix, yPix = latlon2pixel(lat, lon, inputRaster, targetSR, geomTransform)
+                    lon, lat = pixelToGeoCoord(xPix, yPix, inputRaster=inputRaster, targetSR=targetSR, geomTransform=geomTransform)
+
                     ringGeo.AddPoint(lon, lat)
+
 
                 polygonGeo.AddGeometry(ringGeo)
             polygonGeoBuffer = polygonGeo.Buffer(0.0)
-            if breakMultiPolygonPix:
-                polygonGeoBufferList.append([polygonGeoBuffer, poly])
-            else:
-                polygonGeoBufferList.append([polygonGeoBuffer, geom])
+            polygonGeoBufferList.append([polygonGeoBuffer, geom])
+
+        elif geom.GetGeometryName() == 'MULTIPOLYGON':
+
+            for poly in geom:
+                polygonGeo = ogr.Geometry(ogr.wkbPolygon)
+                for ring in poly:
+                    # GetPoint returns a tuple not a Geometry
+                    ringGeo = ogr.Geometry(ogr.wkbLinearRing)
+
+                    for pIdx in xrange(ring.GetPointCount()):
+                        xPix, yPix, zPix = ring.GetPoint(pIdx)
+                        # xPix, yPix = latlon2pixel(lat, lon, inputRaster, targetSR, geomTransform)
+                        lon, lat = pixelToGeoCoord(xPix, yPix, inputRaster=inputRaster, targetSR=targetSR,
+                                                   geomTransform=geomTransform)
+                        ringGeo.AddPoint(lon, lat)
+
+                    polygonGeo.AddGeometry(ringGeo)
+                polygonGeoBuffer = polygonGeo.Buffer(0.0)
+                if breakMultiPolygonPix:
+                    polygonGeoBufferList.append([polygonGeoBuffer, poly])
+                else:
+                    polygonGeoBufferList.append([polygonGeoBuffer, geom])
 
 
-    elif geom.GetGeometryName() == 'LINESTRING':
-        lineGeo = ogr.Geometry(ogr.wkbLineString)
-        for pIdx in xrange(geom.GetPointCount()):
-            xPix, yPix, zPix = geom.GetPoint(pIdx)
-            lon, lat = pixelToGeoCoord(xPix, yPix, inputRaster=inputRaster, targetSR=targetSR,
-                                       geomTransform=geomTransform)
-            lineGeo.AddPoint(lon, lat)
+        elif geom.GetGeometryName() == 'LINESTRING':
+            lineGeo = ogr.Geometry(ogr.wkbLineString)
+            for pIdx in xrange(geom.GetPointCount()):
+                xPix, yPix, zPix = geom.GetPoint(pIdx)
+                lon, lat = pixelToGeoCoord(xPix, yPix, inputRaster=inputRaster, targetSR=targetSR,
+                                           geomTransform=geomTransform)
+                lineGeo.AddPoint(lon, lat)
 
-        polygonGeoBufferList.append([lineGeo, geom])
+            polygonGeoBufferList.append([lineGeo, geom])
 
-    elif geom.GetGeometryName() == 'POINT':
-        pointGeo = ogr.Geometry(ogr.wkbPoint)
+        elif geom.GetGeometryName() == 'POINT':
+            pointGeo = ogr.Geometry(ogr.wkbPoint)
 
-        for pIdx in xrange(geom.GetPointCount()):
-            xPix, yPix, zPix = geom.GetPoint(pIdx)
-            lon, lat = pixelToGeoCoord(xPix, yPix, inputRaster=inputRaster, targetSR=targetSR,
-                                       geomTransform=geomTransform)
-            pointGeo.AddPoint(lon, lat)
+            for pIdx in xrange(geom.GetPointCount()):
+                xPix, yPix, zPix = geom.GetPoint(pIdx)
+                lon, lat = pixelToGeoCoord(xPix, yPix, inputRaster=inputRaster, targetSR=targetSR,
+                                           geomTransform=geomTransform)
+                pointGeo.AddPoint(lon, lat)
 
-        polygonGeoBufferList.append([pointGeo, geom])
+            polygonGeoBufferList.append([pointGeo, geom])
 
 
 
