@@ -5,8 +5,6 @@ import csv
 import subprocess
 import math
 import geopandas as gpd
-import centerline
-import osmnx
 import shapely
 from shapely.geometry import Point
 from pyproj import Proj, transform
@@ -17,6 +15,8 @@ from shapely.geometry.linestring import LineString
 from shapely.geometry.multilinestring import MultiLineString
 try:
     import rtree
+    import centerline
+    import osmnx
 except:
     print("rtree not installed, Will break evaluation code")
 
