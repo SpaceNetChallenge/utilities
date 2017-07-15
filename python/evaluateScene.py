@@ -304,12 +304,14 @@ def combineGeoJsonAndConvertToWGS84(baseName, rasterLocationList,
                     # [GeoWKT, PixWKT])
                     geomList = gT.pixelGeomToGeoGeom(geom, rasterName, targetSR='', geomTransform='', breakMultiPolygonPix=False)
                     #print geomList[0][0].ExportToWkt()
-                    outFeature.SetGeometry(geomList[0][0])
+                    if geomList:
+                        outFeature.SetGeometry(geomList[0][0])
 
                     # Add new feature to output Layer
-                    outLayer.CreateFeature(outFeature)
-                    outFeature = None
-                    inFeature = None
+                        outLayer.CreateFeature(outFeature)
+                        outFeature = None
+                        inFeature = None
+
 
 
 
