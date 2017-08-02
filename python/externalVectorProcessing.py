@@ -110,10 +110,10 @@ if __name__ == "__main__":
 
 
     rasterFolderLocation = args.imgDir
-    vectorSrcFile = args.imgDir
+    vectorSrcFile = args.vectorSrcFile
     vectorPrefix = args.vectorPrefix
     rasterPrefix = args.rasterPrefix
-    pixPrecision = args.pixPrecision
+    pixPrecision = args.pixelPrecision
     createProposalFile = args.CreateProposalFile
     rasterFileExtension = args.rasterExtension
 
