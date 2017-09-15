@@ -386,83 +386,27 @@ def createPolygonFromCorners(left,bottom,right, top):
     return poly
 
 
-def clipShapeFile(shapeSrc, outputFileName, polyToCut, minpartialPerc=0.0, shapeLabel='Geo', debug=False):
-
-    source_layer = shapeSrc.GetLayer()
-    source_srs = source_layer.GetSpatialRef()
-    # Create the output Layer
-
+def clipShapeFile(geoDF, outputFileName, polyToCut, minpartialPerc=0.0, shapeLabel='Geo', debug=False):
+    # check if geoDF has origAreaField
     outGeoJSon = os.path.splitext(outputFileName)[0] + '.geojson'
     if not os.path.exists(os.path.dirname(outGeoJSon)):
         os.makedirs(os.path.dirname(outGeoJSon))
-    print(outGeoJSon)
-    outDriver = ogr.GetDriverByName("geojson")
-    if os.path.exists(outGeoJSon):
-        outDriver.DeleteDataSource(outGeoJSon)
-
     if debug:
-        outGeoJSonDebug = outputFileName.replace('.tif', 'outline.geojson')
-        outDriverDebug = ogr.GetDriverByName("geojson")
-        if os.path.exists(outGeoJSonDebug):
-            outDriverDebug.DeleteDataSource(outGeoJSonDebug)
-        outDataSourceDebug = outDriver.CreateDataSource(outGeoJSonDebug)
-        outLayerDebug = outDataSourceDebug.CreateLayer("groundTruth", source_srs, geom_type=ogr.wkbPolygon)
+        print(outGeoJSon)
 
-        outFeatureDebug = ogr.Feature(source_layer.GetLayerDefn())
-        outFeatureDebug.SetGeometry(polyToCut)
-        outLayerDebug.CreateFeature(outFeatureDebug)
+    if 'origarea' in geoDF.columns:
+        pass
+    else:
+        geoDF['origarea'] = geoDF.area
 
 
-    outDataSource = outDriver.CreateDataSource(outGeoJSon)
-    outLayer = outDataSource.CreateLayer("groundTruth", source_srs, geom_type=ogr.wkbPolygon)
-    # Add input Layer Fields to the output Layer
-    inLayerDefn = source_layer.GetLayerDefn()
-    for i in range(0, inLayerDefn.GetFieldCount()):
-        fieldDefn = inLayerDefn.GetFieldDefn(i)
-        outLayer.CreateField(fieldDefn)
-    outLayer.CreateField(ogr.FieldDefn("partialBuilding", ogr.OFTReal))
-    outLayer.CreateField(ogr.FieldDefn("partialDec", ogr.OFTReal))
-    outLayerDefn = outLayer.GetLayerDefn()
-    source_layer.SetSpatialFilter(polyToCut)
-    for inFeature in source_layer:
 
-        outFeature = ogr.Feature(outLayerDefn)
+    cutGeoDF = geoDF[geoDF.intersetion(polyToCut).area/geoDF['origarea'] > minpartialPerc]
+    cutGeoDF['partialDec'] = cutGeoDF.area/cutGeoDF['origarea']
+    cutGeoDF['truncated'] = cutGeoDF['partialDec']==1.0
 
-        for i in range (0, inLayerDefn.GetFieldCount()):
-            outFeature.SetField(inLayerDefn.GetFieldDefn(i).GetNameRef(), inFeature.GetField(i))
-
-        geom = inFeature.GetGeometryRef()
-        geomNew = geom.Intersection(polyToCut)
-        partialDec = -1
-        if geomNew:
-
-            if geomNew.GetGeometryName()=='POINT':
-                outFeature.SetField("partialDec", 1)
-                outFeature.SetField("partialBuilding", 1)
-            else:
-
-                if geom.GetArea() > 0:
-                    partialDec = geomNew.GetArea() / geom.GetArea()
-                else:
-                    partialDec = 0
-
-                outFeature.SetField("partialDec", partialDec)
-
-                if geom.GetArea() == geomNew.GetArea():
-                    outFeature.SetField("partialBuilding", 0)
-                else:
-                    outFeature.SetField("partialBuilding", 1)
-
-
-        else:
-            outFeature.SetField("partialBuilding", 1)
-            outFeature.SetField("partialBuilding", 1)
-
-
-        outFeature.SetGeometry(geomNew)
-        if partialDec >= minpartialPerc:
-            outLayer.CreateFeature(outFeature)
-            #print ("AddFeature")
+    ##TODO Verify this works in DockerBuild
+    cutGeoDF.to_file(outGeoJSon, driver='GeoJSON')
 
 
 def cutChipFromMosaic(rasterFileList, shapeFileSrcList, outlineSrc='',outputDirectory='', outputPrefix='clip_',
