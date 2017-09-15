@@ -10,7 +10,7 @@ import rasterio as rio
 import affine as af
 import pandas as pd
 from shapely.geometry import Point
-from pyproj import Proj, transform
+import pyproj
 import fiona
 from fiona.crs import from_epsg
 from shapely.geometry.polygon import Polygon
@@ -273,20 +273,54 @@ def utm_isNorthern(latitude):
         return 1
 
 
+def createUTMandLatLonCrs(polyGeom):
+
+    polyCentroid = polyGeom.centroid
+    utm_zone = utm_getZone(polyCentroid.x)
+    is_northern = utm_isNorthern(polyCentroid.y)
+    if is_northern:
+        directionIndicator = '+north'
+    else:
+        directionIndicator = '+south'
+
+    utm_crs = {'datum': 'NAD83',
+               'ellps': 'GRS80',
+               'proj': 'utm',
+               'zone': utm_zone,
+               'units': 'm'}
+
+    latlong_crs = {'init': 'epsg:4326'}
+
+    return utm_crs, latlong_crs
+
 def createUTMTransform(polyGeom):
-    # pt = polyGeom.Boundary().GetPoint()
-    utm_zone = utm_getZone(polyGeom.GetEnvelope()[0])
-    is_northern = utm_isNorthern(polyGeom.GetEnvelope()[2])
-    utm_cs = osr.SpatialReference()
-    utm_cs.SetWellKnownGeogCS('WGS84')
-    utm_cs.SetUTM(utm_zone, is_northern);
-    wgs84_cs = osr.SpatialReference()
-    wgs84_cs.ImportFromEPSG(4326)
 
-    transform_WGS84_To_UTM = osr.CoordinateTransformation(wgs84_cs, utm_cs)
-    transform_UTM_To_WGS84 = osr.CoordinateTransformation(utm_cs, wgs84_cs)
+    polyCentroid = polyGeom.centroid
+    utm_zone = utm_getZone(polyCentroid.x)
+    is_northern = utm_isNorthern(polyCentroid.y)
+    if is_northern:
+        directionIndicator = '+north'
+    else:
+        directionIndicator = '+south'
 
-    return transform_WGS84_To_UTM, transform_UTM_To_WGS84, utm_cs
+    projectTO_UTM = partial(
+        pyproj.transform,
+        pyproj.Proj("+proj=longlat +datum=WGS84 +no_defs"),  #Proj(proj='latlong',datum='WGS84')
+        pyproj.Proj("+proj=utm +zone={} {} +ellps=WGS84 +datum=WGS84 +units=m +no_defs".format(utm_zone,
+                                                                                               directionIndicator))
+    )
+
+
+    projectTO_WGS = partial(
+        pyproj.transform,
+        pyproj.Proj("+proj=utm +zone={} {} +ellps=WGS84 +datum=WGS84 +units=m +no_defs".format(utm_zone,
+                                                                                               directionIndicator)
+                    ),
+        pyproj.Proj("+proj=longlat +datum=WGS84 +no_defs"),  # Proj(proj='latlong',datum='WGS84')
+
+    )
+
+    return projectTO_UTM,  projectTO_WGS
 
 
 def getRasterExtent(srcImage):
