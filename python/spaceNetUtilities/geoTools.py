@@ -259,22 +259,8 @@ def search_rtree(test_building, index):
 
 
 def get_envelope(poly):
-    env = poly.GetEnvelope()
 
-    # Get Envelope returns a tuple (minX, maxX, minY, maxY)
-    # Create ring
-    ring = ogr.Geometry(ogr.wkbLinearRing)
-    ring.AddPoint(env[0], env[2])
-    ring.AddPoint(env[0], env[3])
-    ring.AddPoint(env[1], env[3])
-    ring.AddPoint(env[1], env[2])
-    ring.AddPoint(env[0], env[2])
-
-    # Create polygon
-    poly1 = ogr.Geometry(ogr.wkbPolygon)
-    poly1.AddGeometry(ring)
-
-    return poly1
+    return poly.envelope
 
 def utm_getZone(longitude):
     return (int(1+(longitude+180.0)/6.0))
