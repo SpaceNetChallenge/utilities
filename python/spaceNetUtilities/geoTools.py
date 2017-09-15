@@ -202,42 +202,27 @@ def createBoxFromLine(tmpGeom, ratio=1, halfWidth=-999, transformRequired=True, 
         if transform_WGS84_To_UTM == '':
             transform_WGS84_To_UTM, transform_UTM_To_WGS84 = createUTMTransform(tmpGeom)
 
-        tmpGeom.Transform(transform_WGS84_To_UTM)
+        tmpGeom = shapely.ops.tranform(transform_WGS84_To_UTM, tmpGeom)
+
+
 
 
     # calculatuate Centroid
-    centroidX, centroidY, centroidZ = tmpGeom.Centroid().GetPoint()
-    lengthM = tmpGeom.Length()
+
+    lengthM = tmpGeom.length
     if halfWidth ==-999:
         halfWidth = lengthM/(2*ratio)
 
-    envelope=tmpGeom.GetPoints()
-    cX1 = envelope[0][0]
-    cY1 = envelope[0][1]
-    cX2 = envelope[1][0]
-    cY2 = envelope[1][1]
-    angRad = math.atan2(cY2-cY1,cX2-cX1)
+    polyGeom = tmpGeom.buffer(halfWidth, cap_style=shapely.geometry.CAP_STYLE.flat)
 
-    d_X = math.cos(angRad-math.pi/2)*halfWidth
-    d_Y = math.sin(angRad-math.pi/2)*halfWidth
+    angRad = math.atan2((tmpGeom.coords[1][1]-tmpGeom.coords[0][1],
+                        tmpGeom.coords[1][0] - tmpGeom.coords[0][0]))
 
-    e_X = math.cos(angRad+math.pi/2)*halfWidth
-    e_Y = math.sin(angRad+math.pi/2)*halfWidth
-
-    ring = ogr.Geometry(ogr.wkbLinearRing)
-
-    ring.AddPoint(cX1+d_X, cY1+d_Y)
-    ring.AddPoint(cX1+e_X, cY1+e_Y)
-    ring.AddPoint(cX2+e_X, cY2+e_Y)
-    ring.AddPoint(cX2+d_X, cY2+d_Y)
-    ring.AddPoint(cX1+d_X, cY1+d_Y)
-    polyGeom = ogr.Geometry(ogr.wkbPolygon)
-    polyGeom.AddGeometry(ring)
-    areaM = polyGeom.GetArea()
+    areaM = polyGeom.area
 
     if transformRequired:
-        tmpGeom.Transform(transform_UTM_To_WGS84)
-        polyGeom.Transform(transform_UTM_To_WGS84)
+        polyGeom = shapely.ops.tranform(transform_UTM_To_WGS84, polyGeom)
+
 
 
     return (polyGeom, areaM, angRad, lengthM)
