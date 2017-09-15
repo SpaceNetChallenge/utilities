@@ -1,4 +1,3 @@
-from osgeo import gdal, osr, ogr
 import numpy as np
 import os
 import csv
