@@ -17,6 +17,7 @@ from shapely.geometry.polygon import Polygon
 from shapely.geometry.multipolygon import MultiPolygon
 from shapely.geometry.linestring import LineString
 from shapely.geometry.multilinestring import MultiLineString
+import rtree
 
 from functools import partial
 
@@ -230,18 +231,18 @@ def createBoxFromLine(tmpGeom, ratio=1, halfWidth=-999, transformRequired=True, 
 
 def create_rtreefromdict(buildinglist):
     # create index
-    index = rtree.index.Index(interleaved=False)
+    index = rtree.index.Index(interleaved=True)
     for idx, building in enumerate(buildinglist):
-        index.insert(idx, building['poly'].GetEnvelope())
+        index.insert(idx, building['poly'].bounds)
 
     return index
 
 
 def create_rtree_from_poly(poly_list):
     # create index
-    index = rtree.index.Index(interleaved=False)
+    index = rtree.index.Index(interleaved=True)
     for idx, building in enumerate(poly_list):
-        index.insert(idx, building.GetEnvelope())
+        index.insert(idx, building.bounds)
 
     return index
 
@@ -250,7 +251,7 @@ def search_rtree(test_building, index):
     # input test poly ogr.Geometry  and rtree index
     if test_building.GetGeometryName() == 'POLYGON' or \
                     test_building.GetGeometryName() == 'MULTIPOLYGON':
-        fidlist = index.intersection(test_building.GetEnvelope())
+        fidlist = index.intersection(test_building.bounds)
     else:
         fidlist = []
 
