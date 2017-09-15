@@ -403,7 +403,7 @@ def clipShapeFile(geoDF, outputFileName, polyToCut, minpartialPerc=0.0, shapeLab
 
 
 
-    cutGeoDF = geoDF[geoDF.intersetion(polyToCut).area/geoDF['origarea'] > minpartialPerc]
+    cutGeoDF = geoDF[geoDF.intersection(polyToCut).area/geoDF['origarea'] > minpartialPerc]
     cutGeoDF['partialDec'] = cutGeoDF.area/cutGeoDF['origarea']
     cutGeoDF['truncated'] = cutGeoDF['partialDec']==1.0
 
