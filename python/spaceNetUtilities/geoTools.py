@@ -114,42 +114,17 @@ def readwktcsv(csv_path):
     return geo_df
 
 
-def exporttogeojson(geojsonfilename, buildinglist):
-    #
-    # geojsonname should end with .geojson
-    # building list should be list of dictionaries
-    # list of Dictionaries {'ImageId': image_id, 'BuildingId': building_id, 'polyPix': poly,
-    #                       'polyGeo': poly}
-    # image_id is a string,
-    # BuildingId is an integer,
-    # poly is a ogr.Geometry Polygon
-    #
-    # returns geojsonfilename
+def exporttogeojson(geojsonfilename, geo_df):
+    """Write geopandas dataframe to geo_df 
 
-    driver = ogr.GetDriverByName('geojson')
-    if os.path.exists(geojsonfilename):
-        driver.DeleteDataSource(geojsonfilename)
-    datasource = driver.CreateDataSource(geojsonfilename)
-    layer = datasource.CreateLayer('buildings', geom_type=ogr.wkbPolygon)
-    field_name = ogr.FieldDefn("ImageId", ogr.OFTString)
-    field_name.SetWidth(75)
-    layer.CreateField(field_name)
-    layer.CreateField(ogr.FieldDefn("BuildingId", ogr.OFTInteger))
+           Keyword arguments:
+           geojsonfilename -- geojson to create
+           geo_df          -- geopandas dataframe
 
-    # loop through buildings
-    for building in buildinglist:
-        # create feature
-        feature = ogr.Feature(layer.GetLayerDefn())
-        feature.SetField("ImageId", building['ImageId'])
-        feature.SetField("BuildingId", building['BuildingId'])
-        feature.SetGeometry(building['polyPix'])
+    """
 
-        # Create the feature in the layer (geojson)
-        layer.CreateFeature(feature)
-        # Destroy the feature to free resources
-        feature.Destroy()
-
-    datasource.Destroy()
+    #geo_df.to_file(geojsonfilename, driver='GeoJSON', crs=from_epsg(4326))
+    geo_df.to_file(geojsonfilename, driver='GeoJSON')
 
     return geojsonfilename
 
