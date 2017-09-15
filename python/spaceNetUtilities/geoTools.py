@@ -60,7 +60,7 @@ def import_chip_geojson(geojsonfilename, ImageId=''):
 
     buildingList_df = gpd.read_file(geojsonfilename)
 
-    datasource = ogr.Open(geojsonfilename, 0)
+    
     if ImageId=='':
         ImageId = os.path.splitext(os.path.basename(geojsonfilename))[0]
 
