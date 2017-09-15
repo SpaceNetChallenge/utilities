@@ -410,14 +410,18 @@ def clipShapeFile(geoDF, outputFileName, polyToCut, minpartialPerc=0.0, shapeLab
     else:
         geoDF['origarea'] = geoDF.area
 
+    #TODO must implement different case for lines
 
-
-    cutGeoDF = geoDF[geoDF.intersection(polyToCut).area/geoDF['origarea'] > minpartialPerc]
+    cutGeoDF = geoDF.iloc[geoDF.intersection(polyToCut).area/geoDF['origarea'] > minpartialPerc]
     cutGeoDF['partialDec'] = cutGeoDF.area/cutGeoDF['origarea']
-    cutGeoDF['truncated'] = cutGeoDF['partialDec']==1.0
+    cutGeoDF['truncated'] = (cutGeoDF['partialDec']==1.0).astype(int)
 
+    if cutGeoDF.empty:
+        with open(outGeoJSon, 'a'):
+            os.utime(outGeoJSon, None)
+    else:
     ##TODO Verify this works in DockerBuild
-    cutGeoDF.to_file(outGeoJSon, driver='GeoJSON')
+        cutGeoDF.to_file(outGeoJSon, driver='GeoJSON')
 
 
 def cutChipFromMosaic(rasterFileList, shapeFileSrcList, outlineSrc='',outputDirectory='', outputPrefix='clip_',
