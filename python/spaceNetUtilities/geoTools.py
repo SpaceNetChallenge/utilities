@@ -78,43 +78,40 @@ def mergePolyList(geojsonfilename):
 
     return buildingList_df.unary_union
 
-def readwktcsv(csv_path,removeNoBuildings=True, groundTruthFile=True):
+
+def readwktcsv(csv_path):
+    """read spacenetV2 csv and return geopandas dataframe
+
+               Keyword arguments:
+
+               csv_path -- path to csv of spacenetV2 ground truth or solution submission format 
+                    csv Format Expected = ['ImageId', 'BuildingId', 'PolygonWKT_Pix', 'PolygonWKT_Geo'] or
+                    csv Format Expected = ['ImageId', 'BuildingId', 'PolygonWKT', 'Confidence']
+
+            see https://community.topcoder.com/longcontest/?module=ViewProblemStatement&rd=16892&pm=14551 to 
+            learn more about the spacenetV2 csv formats   
+    """
     #
-    # csv Format Expected = ['ImageId', 'BuildingId', 'PolygonWKT_Pix', 'PolygonWKT_Geo']
-    # returns list of Dictionaries {'ImageId': image_id, 'BuildingId': building_id, 'poly': poly}
-    # image_id is a string,
-    # BuildingId is an integer,
-    # poly is a ogr.Geometry Polygon
 
-    buildinglist = []
-    with open(csv_path, 'rb') as csvfile:
-        building_reader = csv.reader(csvfile, delimiter=',', quotechar='"')
-        next(building_reader, None)  # skip the headers
-        for row in building_reader:
 
-            if removeNoBuildings:
-                if int(row[1]) != -1:
-                    polyPix = ogr.CreateGeometryFromWkt(row[2])
-                    if groundTruthFile:
-                        polyGeo = ogr.CreateGeometryFromWkt(row[3])
-                    else:
-                        polyGeo = []
-                    buildinglist.append({'ImageId': row[0], 'BuildingId': int(row[1]), 'polyPix': polyPix,
-                                         'polyGeo': polyGeo,
-                                         })
+    df = pd.read_csv(csv_path)
+    crs = {}
+    if 'PolygonWKT_Geo' in df.columns:
+        geometry = [shapely.wkt.loads(x) for x in df['PolygonWKT_Geo'].values]
+        crs = {'init': 'epsg:4326'}
+    elif 'PolygonWKT_Pix' in df.columns:
+        geometry = [shapely.wkt.loads(x) for x in df['PolygonWKT_Pix'].values]
+    elif 'PolygonWKT' in df.columns:
+        geometry = [shapely.wkt.loads(x) for x in df['PolygonWKT'].values]
 
-            else:
+    else:
+        print(
+            'Eror No Geometry Column detected, column must be called "PolygonWKT_Geo", "PolygonWKT_Pix", or "PolygonWKT"')
+        return -1
 
-                polyPix = ogr.CreateGeometryFromWkt(row[2])
-                if groundTruthFile:
-                    polyGeo = ogr.CreateGeometryFromWkt(row[3])
-                else:
-                    polyGeo = []
-                buildinglist.append({'ImageId': row[0], 'BuildingId': int(row[1]), 'polyPix': polyPix,
-                                     'polyGeo': polyGeo,
-                                     })
+    geo_df = gpd.GeoDataFrame(df, crs=crs, geometry=geometry)
 
-    return buildinglist
+    return geo_df
 
 
 def exporttogeojson(geojsonfilename, buildinglist):
