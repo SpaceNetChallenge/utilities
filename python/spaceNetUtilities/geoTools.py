@@ -24,7 +24,7 @@ except:
     print("rtree not installed, Will break evaluation code")
 
 
-def import_summary_geojsonGPD(geojsonfilename, removeNoBuildings=True):
+def import_summary_geojson(geojsonfilename, removeNoBuildings=True):
     """read summary spacenetV2 geojson into geopandas dataFrame.
 
        Keyword arguments:
