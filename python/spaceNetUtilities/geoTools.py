@@ -6,6 +6,8 @@ import subprocess
 import math
 import geopandas as gpd
 import shapely
+import rasterio as rio
+import affine as af
 from shapely.geometry import Point
 from pyproj import Proj, transform
 import fiona
