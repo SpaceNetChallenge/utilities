@@ -575,17 +575,20 @@ def createclip(outputDirectory, rasterFileList, shapeSrcList,
     #                       ['/path/to/8band_AOI_1.tif, '8band']
     #                        ]
 
+    ## Create Polygon of area to Cut
     polyCutWGS = createPolygonFromCorners(minXCut, minYCut, maxXCut, maxYCut)
 
-
+    # create rasterFile BaseName for later Copying
     if not rasterFileBaseList:
         rasterFileBaseList = []
         for rasterFile in rasterFileList:
             rasterFileBaseList.append(os.path.basename(rasterFile[0]))
 
     if rasterPolyEnvelope == '':
-        pass
+        #set rasterPolyEnvelope to point to indicate it has no area and rasterExtent should be used
+        rasterPolyEnvelope=Point(0,0)
 
+    # Generate chipName List depending on type of image
     chipNameList = []
     for rasterFile in rasterFileList:
         if className == '':
@@ -611,6 +614,7 @@ def createclip(outputDirectory, rasterFileList, shapeSrcList,
         print(rasterFile)
         print(outputFileName)
         #TODO replace gdalwarp with rasterio and windowed reads
+
         cmd = ["gdalwarp", "-te", "{}".format(minXCut), "{}".format(minYCut),  "{}".format(maxXCut),
                          "{}".format(maxYCut),
                          '-co', 'PHOTOMETRIC=rgb',
@@ -622,13 +626,13 @@ def createclip(outputDirectory, rasterFileList, shapeSrcList,
     outputFileName = os.path.join(outputDirectory, rasterFileList[0][1], chipNameList[0])
 
 
-    ### Clip poly to cust to Raster Extent
-    if rasterPolyEnvelope.GetArea() == 0:
-        srcImage = gdal.Open(rasterFileList[0][0])
+    ### Clip poly to Raster Extent
+    if rasterPolyEnvelope.area == 0:
+        srcImage = rio.open(rasterFileList[0][0])
         geoTrans, rasterPolyEnvelope, ulX, ulY, lrX, lrY = getRasterExtent(srcImage)
-        polyVectorCut = polyCutWGS.Intersection(rasterPolyEnvelope)
+        polyVectorCut = polyCutWGS.intersection(rasterPolyEnvelope)
     else:
-        polyVectorCut = polyCutWGS.Intersection(rasterPolyEnvelope)
+        polyVectorCut = polyCutWGS.intersection(rasterPolyEnvelope)
 
     # Interate thorough Vector Src List
     for shapeSrc in shapeSrcList:
