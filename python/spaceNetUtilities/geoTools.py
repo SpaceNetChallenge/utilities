@@ -8,42 +8,40 @@ import geopandas as gpd
 import shapely
 from shapely.geometry import Point
 from pyproj import Proj, transform
+import fiona
 from fiona.crs import from_epsg
 from shapely.geometry.polygon import Polygon
 from shapely.geometry.multipolygon import MultiPolygon
 from shapely.geometry.linestring import LineString
 from shapely.geometry.multilinestring import MultiLineString
+import geopandas as gpd
+from functools import partial
+
 try:
-    import rtree
     import centerline
     import osmnx
 except:
     print("rtree not installed, Will break evaluation code")
 
 
-def import_summary_geojson(geojsonfilename, removeNoBuildings=True):
-    # driver = ogr.GetDriverByName('geojson')
-    datasource = ogr.Open(geojsonfilename, 0)
+def import_summary_geojsonGPD(geojsonfilename, removeNoBuildings=True):
+    """read summary spacenetV2 geojson into geopandas dataFrame.
 
-    layer = datasource.GetLayer()
-    print(layer.GetFeatureCount())
+       Keyword arguments:
+       geojsonfilename -- geojson to read
+       removeNoBuildings -- remove all samples with BuildingId == -1 (default =True)
+    """
 
-    buildingList = []
-    for idx, feature in enumerate(layer):
 
-        poly = feature.GetGeometryRef()
+    buildingList_df = gpd.read_file(geojsonfilename)
 
-        if poly:
-            if removeNoBuildings:
-                if feature.GetField('BuildingId') != -1:
-                    buildingList.append({'ImageId': feature.GetField('ImageId'), 'BuildingId': feature.GetField('BuildingId'),
-                                  'poly': feature.GetGeometryRef().Clone()})
-            else:
 
-                buildingList.append({'ImageId': feature.GetField('ImageId'), 'BuildingId': feature.GetField('BuildingId'),
-                              'poly': feature.GetGeometryRef().Clone()})
+    if removeNoBuildings:
+        buildingList_df = buildingList_df[buildingList_df['BuildingId']!=-1]
 
-    return buildingList
+    buildingList_df['poly'] = buildingList_df.geometry
+
+    return buildingList_df
 
 
 def import_chip_geojson(geojsonfilename, ImageId=''):
