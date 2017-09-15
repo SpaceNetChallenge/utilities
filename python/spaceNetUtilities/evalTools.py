@@ -9,41 +9,25 @@ def iou(test_poly, truth_polys, truth_index=[]):
     iou_list = []
     if truth_index:
         fidlist = gT.search_rtree(test_poly, truth_index)
-
+        #print(test_poly)
         for fid in fidlist:
-            if not test_poly.IsValid():
-                test_poly = test_poly.Buffer(0.0)
+            if not test_poly.is_valid:
+                test_poly = test_poly.buffer(0.0)
 
-            intersection_result = test_poly.Intersection(truth_polys[fid])
+            intersection_result = test_poly.intersection(truth_polys[fid])
             fidlistArray.append(fid)
 
-            if intersection_result.GetGeometryName() == 'POLYGON' or \
-                            intersection_result.GetGeometryName() == 'MULTIPOLYGON':
-                intersection_area = intersection_result.GetArea()
-                union_area = test_poly.Union(truth_polys[fid]).GetArea()
+            if intersection_result.geom_type == 'Polygon' or \
+                            intersection_result.geom_type == 'MultiPolygon':
+                intersection_area = intersection_result.area
+                union_area = test_poly.union(truth_polys[fid]).area
                 iou_list.append(intersection_area / union_area)
 
             else:
                 iou_list.append(0)
 
-    else:
-
-        for idx, truth_poly in enumerate(truth_polys):
-            intersection_result = test_poly.Intersection(truth_poly)
-            intersection_result.GetGeometryName()
-
-            if intersection_result.GetGeometryName() == 'POLYGON' or \
-                            intersection_result.GetGeometryName() == 'MULTIPOLYGON':
-                intersection_area = intersection_result.GetArea()
-                union_area = test_poly.Union(truth_poly).GetArea()
-                iou_list.append(intersection_area / union_area)
-
-            else:
-
-                iou_list.append(0)
 
     return iou_list, fidlistArray
-
 
 def score(test_polys, truth_polys, threshold=0.5, truth_index=[],
           resultGeoJsonName = [],
