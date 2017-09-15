@@ -3,7 +3,7 @@ import numpy as np
 import os
 import geoTools as gT
 import math
-import cPickle as pickle
+import pickle
 import csv
 import glob
 from PIL import Image
@@ -350,7 +350,8 @@ def createCSVSummaryFileFromJsonList(geoJsonList, outputFileName, chipnameList=[
 def createCSVSummaryFromDirectory(geoJsonDirectory, rasterFileDirectoryList,
                                   aoi_num=0,
                                   aoi_name='TEST',
-                                  outputDirectory=''):
+                                  outputDirectory='',
+                                  verbose=False):
     if outputDirectory == '':
         outputDirectory == geoJsonDirectory
     outputbaseName = "AOI_{}_{}_polygons_solution".format(aoi_num, aoi_name)
@@ -378,8 +379,9 @@ def createCSVSummaryFromDirectory(geoJsonDirectory, rasterFileDirectoryList,
         for idx, rasterFile in enumerate(rasterFileDirectoryList):
             bandName = imageId.replace('.geojson', '.tif')
             bandName = bandName.replace('Geo_', rasterFile[1]+'_')
-            print imageId
-            print os.path.join(rasterFile[0], bandName)
+            if verbose:
+                print(imageId)
+                print(os.path.join(rasterFile[0], bandName))
             chipSummaryBand = {'chipName': os.path.join(rasterFile[0], bandName),
                                 'geoVectorName': os.path.join(geoJsonDirectory, imageId),
                                 'imageId': os.path.splitext(imageId)[0]}
@@ -387,14 +389,15 @@ def createCSVSummaryFromDirectory(geoJsonDirectory, rasterFileDirectoryList,
             chipsSummaryList[idx].append(chipSummaryBand)
 
 
-    print "starting"
+    if verbose:
+        print("starting")
     for idx, rasterFile in enumerate(rasterFileDirectoryList):
         createCSVSummaryFile(chipsSummaryList[idx], os.path.join(outputDirectory,
                                                                  outputbaseName+'_'+rasterFile[1]+'.csv'),
                             replaceImageID=rasterFile[1]+'_')
 
-
-    print "finished"
+    if verbose:
+        print("finished")
 
 
 
