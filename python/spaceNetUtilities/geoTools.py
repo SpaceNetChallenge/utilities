@@ -60,7 +60,7 @@ def import_chip_geojson(geojsonfilename, ImageId=''):
 
     buildingList_df = gpd.read_file(geojsonfilename)
 
-    
+
     if ImageId=='':
         ImageId = os.path.splitext(os.path.basename(geojsonfilename))[0]
 
@@ -323,6 +323,10 @@ def createUTMTransform(polyGeom):
 
     return projectTO_UTM,  projectTO_WGS
 
+def transformGeomToUTM(geom):
+    transform_WGS84_To_UTM, transform_UTM_To_WGS84 = createUTMTransform(geom)
+
+    return shapely.ops.tranform(transform_WGS84_To_UTM, geom)
 
 def getRasterExtent(srcImage):
 
@@ -440,10 +444,10 @@ def cutChipFromMosaic(rasterFileList, shapeFileSrcList, outlineSrc='',outputDire
         poly = shapely.ops.tranform(transform_WGS84_To_UTM, poly)
 
 
-    env = poly.GetEnvelope()
+    env = poly.bounds
     minX = env[0]
-    minY = env[2]
-    maxX = env[1]
+    minY = env[1]
+    maxX = env[2]
     maxY = env[3]
 
     #return poly to WGS84
@@ -566,7 +570,7 @@ def createclip(outputDirectory, rasterFileList, shapeSrcList,
                minpartialPerc=0,
                outputPrefix='',
                createPix=False,
-               rasterPolyEnvelope=ogr.CreateGeometryFromWkt("POLYGON EMPTY"),
+               rasterPolyEnvelope=Point(0,0),
                className='',
                baseName='',
                imgId=-1,
@@ -665,12 +669,14 @@ def cutChipFromRasterCenter(rasterFileList, shapeFileSrc, outlineSrc='',
                             clipSizeMeters=50, createPix=False,
                             classFieldName = 'TYPE',
                             minpartialPerc=0.1,
+                            preciseMatch=True,
+                            verbose=False
                             ):
     #rasterFileList = [['rasterLocation', 'rasterDescription']]
     # i.e rasterFileList = [['/path/to/3band_AOI_1.tif, '3band'],
     #                       ['/path/to/8band_AOI_1.tif, '8band']
     #                        ]
-    srcImage = gdal.Open(rasterFileList[0][0])
+    srcImage = rio.open(rasterFileList[0][0])
     geoTrans, poly, ulX, ulY, lrX, lrY = getRasterExtent(srcImage)
 
     if outputDirectory == "":
@@ -681,40 +687,55 @@ def cutChipFromRasterCenter(rasterFileList, shapeFileSrc, outlineSrc='',
         rasterFileBaseList.append(os.path.basename(rasterFile[0]))
 
     transform_WGS84_To_UTM, transform_UTM_To_WGS84, utm_cs = createUTMTransform(poly)
-    poly.Transform(transform_WGS84_To_UTM)
-    env = poly.GetEnvelope()
+    #poly = shapely.ops.tranform(transform_WGS84_To_UTM, poly)
 
-    # return poly to WGS84
-    poly.Transform(transform_UTM_To_WGS84)
 
-    shapeSrc = ogr.Open(shapeFileSrc, 0)
+
+    shapeSrc = gpd.read_file(shapeFileSrc)
+
     if outlineSrc == '':
         geomOutline = poly
-    else:
-        outline = ogr.Open(outlineSrc)
-        layer = outline.GetLayer()
-        featureOutLine = layer.GetFeature(0)
-        geomOutlineBase = featureOutLine.GetGeometryRef()
-        geomOutline = geomOutlineBase.Intersection(poly)
 
-    shapeSrcBase = ogr.Open(shapeFileSrc, 0)
-    layerBase = shapeSrcBase.GetLayer()
-    layerBase.SetSpatialFilter(geomOutline)
+    else:
+        with fiona.open(outlineSrc) as src:
+            outline = src.next()
+            geomOutlineBase = shape(outline['geometry'])
+            geomOutline = geomOutlineBase.intersection(poly)
+
+    # use sindex function of geoPandas for filter
+    shapeSrcBaseGDF = gpd.read_file(shapeFileSrc, 0)
+    shapeSrcBaseIndex = shapeSrcBaseGDF.sindex
+    possible_matches_index = list(shapeSrcBaseIndex.intersection(geomOutline.bounds))
+    possible_matches = shapeSrcBaseGDF.iloc[possible_matches_index]
+
+    #if geomOutline is very irregular, preciseMatch will be neccessary
+    if preciseMatch:
+        layerBase = possible_matches[possible_matches.intersects(geomOutline)]
+    else:
+        layerBase = possible_matches
+
+
+
     for rasterFile in rasterFileList:
         if not os.path.exists(os.path.join(outputDirectory, rasterFile[1])):
             os.makedirs(os.path.join(outputDirectory, rasterFile[1]))
-    for feature in layerBase:
-        featureGeom = feature.GetGeometryRef()
-        cx, cy, cz = featureGeom.Centroid().GetPoint()
+
+    for idx, feature in layerBase.iterrows():
+        featureGeom = feature['geometry']
+        cx = featureGeom.centroid.x
+        cy = featureGeom.centroid.y
+
         polyCut = createPolygonFromCenterPoint(cx, cy, radiusMeters=clipSizeMeters)
-        print(classFieldName)
-        classDescription = feature.GetField(classFieldName)
+
+        if verbose:
+            print(classFieldName)
+
+        classDescription = feature[classFieldName]
+        #Eliminate WhiteSpace
         classDescription = classDescription.replace(" ","")
-        envCut = polyCut.GetEnvelope()
-        minXCut = envCut[0]
-        minYCut = envCut[2]
-        maxXCut = envCut[1]
-        maxYCut = envCut[3]
+
+        minXCut, minYCut, maxXCut, maxYCut = polyCut.bounds
+
         createclip(outputDirectory, rasterFileList, shapeSrc,
                        maxXCut, maxYCut, minYCut, minXCut,
                        rasterFileBaseList=rasterFileBaseList,
@@ -872,5 +893,7 @@ def createBufferGeoPandas(inGDF, bufferDistanceMeters=5, bufferRoundness=1, proj
 
 
     return gdf_buffer
+
+
 
 
