@@ -123,7 +123,7 @@ def score(test_polys, truth_polys, threshold=0.5, truth_index=[],
     return true_pos_count, false_pos_count, false_neg_count
 
 
-def evalfunction((image_id, test_polys, truth_polys, truth_index),
+def evalfunction(image_id, test_polys, truth_polys, truth_index,
                  resultGeoJsonName=[],
                  threshold = 0.5):
 
