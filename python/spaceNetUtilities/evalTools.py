@@ -1,6 +1,7 @@
 import numpy as np
 import geoTools as gT
-from osgeo import ogr
+import fiona
+from tqdm import tqdm
 import os
 
 def iou(test_poly, truth_polys, truth_index=[]):
