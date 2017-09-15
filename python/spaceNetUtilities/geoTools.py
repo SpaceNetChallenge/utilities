@@ -17,7 +17,7 @@ from shapely.geometry.multipolygon import MultiPolygon
 from shapely.geometry.linestring import LineString
 from shapely.geometry.multilinestring import MultiLineString
 from shapely.geometry import shape
-
+from tqdm import tqdm
 import rtree
 
 from functools import partial
@@ -422,6 +422,7 @@ def cutChipFromMosaic(rasterFileList, shapeFileSrcList, outlineSrc='',outputDire
                       noBlackSpace=False,
                       randomClip=-1,
                       verbose=False):
+
     #rasterFileList = [['rasterLocation', 'rasterDescription']]
     # i.e rasterFileList = [['/path/to/3band_AOI_1.tif, '3band'],
     #                       ['/path/to/8band_AOI_1.tif, '8band']
@@ -489,6 +490,11 @@ def cutChipFromMosaic(rasterFileList, shapeFileSrcList, outlineSrc='',outputDire
         print('clipsizeMY ={}'.format(clipSizeMY))
         print(xInterval)
         print(yInterval)
+
+    pbar = tqdm(total=len(xInterval)* len(yInterval), desc='Creating Chips')
+
+
+
 
     for llX in xInterval:
         if parrallelProcess:
@@ -561,6 +567,10 @@ def cutChipFromMosaic(rasterFileList, shapeFileSrcList, outlineSrc='',outputDire
                                              baseName=baseName,
                                              imgId=imgId)
                     chipSummaryList.append(chipSummary)
+
+                    pbar.update(1)
+
+    pbar.close()
 
     return chipSummaryList
 
