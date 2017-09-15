@@ -340,35 +340,48 @@ def getRasterExtent(srcImage):
            srcImage.bounds.right, \
            srcImage.bounds.bottom
 
-def createPolygonFromCenterPoint(cX,cY, radiusMeters, transform_WGS_To_UTM_Flag=True):
+def createPolygonFromCenterPointXY(cX,cY, radiusMeters, transform_WGS_To_UTM_Flag=True):
 
-    point = ogr.Geometry(ogr.wkbPoint)
-    point.AddPoint(cX, cY)
 
-    transform_WGS84_To_UTM, transform_UTM_To_WGS84, utm_cs = createUTMTransform(point)
+    point = Point(cX, cY)
+
+    return createPolygonFromCenterPoint(point, radiusMeters, transform_WGS_To_UTM_Flag=True)
+
+def createPolygonFromCenterPoint(point, radiusMeters, transform_WGS_To_UTM_Flag=True):
+
+
+    transform_WGS84_To_UTM, transform_UTM_To_WGS84 = createUTMTransform(point)
     if transform_WGS_To_UTM_Flag:
-        point.Transform(transform_WGS84_To_UTM)
+        point = shapely.ops.tranform(transform_WGS84_To_UTM, point)
 
     poly = point.Buffer(radiusMeters)
 
     if transform_WGS_To_UTM_Flag:
-        poly.Transform(transform_UTM_To_WGS84)
+        poly = shapely.ops.tranform(transform_UTM_To_WGS84, poly)
 
     return poly
 
+def createPolygonFromCentroidGDF(gdf, radiusMeters, transform_WGS_To_UTM_Flag=True):
 
-def createPolygonFromCorners(lrX,lrY,ulX, ulY):
+    if transform_WGS_To_UTM_Flag:
+        transform_WGS84_To_UTM, transform_UTM_To_WGS84 = createUTMTransform(gdf.centroid.values[0])
+        gdf.to_crs()
+        point = shapely.ops.tranform(transform_WGS84_To_UTM, point)
+
+    poly = point.Buffer(radiusMeters)
+
+    if transform_WGS_To_UTM_Flag:
+        poly = shapely.ops.tranform(transform_UTM_To_WGS84, poly)
+
+    return poly
+
+def createPolygonFromCorners(left,bottom,right, top):
     # Create ring
-    ring = ogr.Geometry(ogr.wkbLinearRing)
-    ring.AddPoint(lrX, lrY)
-    ring.AddPoint(lrX, ulY)
-    ring.AddPoint(ulX, ulY)
-    ring.AddPoint(ulX, lrY)
-    ring.AddPoint(lrX, lrY)
-
-    # Create polygon
-    poly = ogr.Geometry(ogr.wkbPolygon)
-    poly.AddGeometry(ring)
+    poly = Polygon((left, top),
+                   (right, top),
+                   (right, bottom),
+                   (left, bottom)
+                    )
 
     return poly
 
