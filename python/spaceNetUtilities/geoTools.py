@@ -324,33 +324,21 @@ def createUTMTransform(polyGeom):
 
 
 def getRasterExtent(srcImage):
-    geoTrans = srcImage.GetGeoTransform()
-    ulX = geoTrans[0]
-    ulY = geoTrans[3]
-    xDist = geoTrans[1]
-    yDist = geoTrans[5]
-    rtnX = geoTrans[2]
-    rtnY = geoTrans[4]
 
-    cols = srcImage.RasterXSize
-    rows = srcImage.RasterYSize
+    poly = Polygon(((srcImage.bounds.left, srcImage.bounds.top),
+                   (srcImage.bounds.right, srcImage.bounds.top),
+                   (srcImage.bounds.right, srcImage.bounds.bottom),
+                   (srcImage.bounds.left, srcImage.bounds.bottom))
+                    )
 
-    lrX = ulX + xDist * cols
-    lrY = ulY + yDist * rows
 
-    # Create ring
-    ring = ogr.Geometry(ogr.wkbLinearRing)
-    ring.AddPoint(lrX, lrY)
-    ring.AddPoint(lrX, ulY)
-    ring.AddPoint(ulX, ulY)
-    ring.AddPoint(ulX, lrY)
-    ring.AddPoint(lrX, lrY)
 
-    # Create polygon
-    poly = ogr.Geometry(ogr.wkbPolygon)
-    poly.AddGeometry(ring)
-
-    return geoTrans, poly, ulX, ulY, lrX, lrY
+    return srcImage.affine, \
+           poly, \
+           srcImage.bounds.left, \
+           srcImage.bounds.top, \
+           srcImage.bounds.right, \
+           srcImage.bounds.bottom
 
 def createPolygonFromCenterPoint(cX,cY, radiusMeters, transform_WGS_To_UTM_Flag=True):
 
