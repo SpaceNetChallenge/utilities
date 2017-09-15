@@ -29,6 +29,25 @@ def iou(test_poly, truth_polys, truth_index=[]):
 
     return iou_list, fidlistArray
 
+def write_geojson(geojson_name,
+                  feature_list,
+                  output_crs={'init': 'epsg:4326'},
+                  output_schema={'geometry': 'Polygon',
+                                 'properties': {'ImageId': 'str',
+                                                'IOUScore': 'float:15.5',
+                                                'BuildingId': 'int'}
+                                 },
+                  output_driver='GeoJSON'
+                  ):
+    with fiona.open(geojson_name,'w',
+                    driver=output_driver,
+                    crs=output_crs,
+                    schema=output_schema) as sink:
+
+        for feature in feature_list:
+            sink.write(feature)
+
+
 def score(test_polys, truth_polys, threshold=0.5, truth_index=[],
           resultGeoJsonName = [],
           imageId = []):
