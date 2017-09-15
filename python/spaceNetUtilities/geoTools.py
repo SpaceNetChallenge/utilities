@@ -45,25 +45,25 @@ def import_summary_geojson(geojsonfilename, removeNoBuildings=True):
 
 
 def import_chip_geojson(geojsonfilename, ImageId=''):
-    # driver = ogr.GetDriverByName('geojson')
+    """read spacenetV2 chip geojson into geopandas dataFrame.
+
+           Keyword arguments:
+           geojsonfilename -- geojson to read
+           ImageId -- Specify ImageId.  If not specified. ImageId is defined by
+            os.path.splitext(os.path.basename(geojsonfilename))[0]
+    """
+
+    buildingList_df = gpd.read_file(geojsonfilename)
+
     datasource = ogr.Open(geojsonfilename, 0)
     if ImageId=='':
-        ImageId = geojsonfilename
-    layer = datasource.GetLayer()
-    print(layer.GetFeatureCount())
+        ImageId = os.path.splitext(os.path.basename(geojsonfilename))[0]
 
-    polys = []
-    BuildingId = 0
-    for idx, feature in enumerate(layer):
+    buildingList_df['ImageId']=ImageId
+    buildingList_df['BuildingId'] = range(1, len(buildingList_df) + 1)
+    buildingList_df['poly']       = buildingList_df.geometry #[shapely.wkt.loads(x) for x in buildingList_df.geometry.values]
 
-        poly = feature.GetGeometryRef()
-
-        if poly:
-            BuildingId = BuildingId + 1
-            polys.append({'ImageId': ImageId, 'BuildingId': BuildingId,
-                          'poly': feature.GetGeometryRef().Clone()})
-
-    return polys
+    return buildingList_df
 
 
 def mergePolyList(geojsonfilename):
