@@ -129,11 +129,6 @@ def exporttogeojson(geojsonfilename, geo_df):
     return geojsonfilename
 
 
-def createmaskfrompolygons(polygons):
-    pass
-    ## see labelTools createRasterFromGeoJson
-
-
 def latlon2pixel(lat, lon, input_raster='', targetsr='', geom_transform=''):
     # type: (object, object, object, object, object) -> object
 
