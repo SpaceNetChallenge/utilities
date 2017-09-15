@@ -151,7 +151,7 @@ def evalfunction(image_id, test_polys, truth_polys, truth_index,
     return ((F1score, true_pos_count, false_pos_count, false_neg_count), image_id)
 
 
-def  create_eval_function_input((image_ids, (prop_polysIdList, prop_polysPoly), (sol_polysIdsList, sol_polysPoly))):
+def  create_eval_function_input(image_ids, prop_polysIdList, prop_polysPoly, sol_polysIdsList, sol_polysPoly):
 
     evalFunctionInput = []
 
