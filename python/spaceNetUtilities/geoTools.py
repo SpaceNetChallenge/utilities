@@ -385,11 +385,14 @@ def createPolygonFromCentroidGDF(gdf, radiusMeters, transform_WGS_To_UTM_Flag=Tr
 
 def createPolygonFromCorners(left,bottom,right, top):
     # Create ring
-    poly = Polygon((left, top),
-                   (right, top),
-                   (right, bottom),
-                   (left, bottom)
-                    )
+    poly = Polygon(
+        (
+            (left, top),
+            (right, top),
+            (right, bottom),
+            (left, bottom)
+        )
+    )
 
     return poly
 
