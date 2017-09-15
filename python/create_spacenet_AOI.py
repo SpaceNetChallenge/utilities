@@ -108,5 +108,5 @@ if __name__ == '__main__':
                      createPix=args.createPix,
                      createSummaryCSVChallenge=args.createSummaryCSV,
                      csvLabel=args.csvLabel,
-                     featurName=args.featureName
+                     featureName=args.featureName
                      )
