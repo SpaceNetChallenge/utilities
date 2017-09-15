@@ -78,7 +78,7 @@ if __name__ == '__main__':
     # location of imagery
 
     srcImageryList = []
-    with open(args.srcRasterList, 'rb') as csvfile:
+    with open(args.srcRasterList, 'rt') as csvfile:
         print(args.srcRasterList)
         # Todo insert header information into CSV
         csvreader = csv.reader(csvfile, delimiter=',')
@@ -89,7 +89,7 @@ if __name__ == '__main__':
                     srcImageryList.append([x.strip() for x in row])
 
     srcVectorFileList = []
-    with open(args.geoJsonList, 'rb') as csvfile:
+    with open(args.geoJsonList, 'rt') as csvfile:
         # Todo insert header information into CSV
         csvreader = csv.reader(csvfile, delimiter=',')
 
