@@ -8,6 +8,7 @@ import geopandas as gpd
 import shapely
 import rasterio as rio
 import affine as af
+import pandas as pd
 from shapely.geometry import Point
 from pyproj import Proj, transform
 import fiona
@@ -16,7 +17,7 @@ from shapely.geometry.polygon import Polygon
 from shapely.geometry.multipolygon import MultiPolygon
 from shapely.geometry.linestring import LineString
 from shapely.geometry.multilinestring import MultiLineString
-import geopandas as gpd
+
 from functools import partial
 
 try:
