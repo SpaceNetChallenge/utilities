@@ -1,7 +1,7 @@
 from osgeo import gdal, osr, ogr, gdalnumeric
 import numpy as np
 import os
-import geoTools as gT
+from spaceNetUtilities import geoTools as gT
 import math
 import pickle
 import csv
