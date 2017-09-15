@@ -67,23 +67,16 @@ def import_chip_geojson(geojsonfilename, ImageId=''):
 
 
 def mergePolyList(geojsonfilename):
+    """read geoJson and return dataframe of unary_union
 
-    multipolygon = ogr.Geometry(ogr.wkbMultiPolygon)
-    datasource = ogr.Open(geojsonfilename, 0)
+           Keyword arguments:
+           geojsonfilename -- geojson to read
 
-    layer = datasource.GetLayer()
-    print(layer.GetFeatureCount())
+    """
 
+    buildingList_df = gpd.read_file(geojsonfilename)
 
-    for idx, feature in enumerate(layer):
-
-        poly = feature.GetGeometryRef()
-
-        if poly:
-
-            multipolygon.AddGeometry(feature.GetGeometryRef().Clone())
-
-    return multipolygon
+    return buildingList_df.unary_union
 
 def readwktcsv(csv_path,removeNoBuildings=True, groundTruthFile=True):
     #
