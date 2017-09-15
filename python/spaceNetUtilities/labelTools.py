@@ -1,4 +1,3 @@
-from osgeo import gdal, osr, ogr, gdalnumeric
 import numpy as np
 import os
 from spaceNetUtilities import geoTools as gT
@@ -15,7 +14,7 @@ import scipy.io
 from scipy.sparse import csr_matrix
 import json
 import re
-
+from osgeo import gdal, osr, ogr, gdalnumeric
 
 def evaluateLineStringPlane(geom, label='Airplane'):
     ring = ogr.Geometry(ogr.wkbLinearRing)
