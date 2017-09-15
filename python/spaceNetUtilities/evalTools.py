@@ -1,5 +1,6 @@
 import numpy as np
 import geoTools as gT
+from shapely.geometry import mapping, Polygon
 import fiona
 from tqdm import tqdm
 import os
@@ -53,6 +54,13 @@ def score(test_polys, truth_polys, threshold=0.5, truth_index=[],
           imageId = []):
 
     # Define internal functions
+    #
+    output_schema = {'geometry': 'Polygon',
+                    'properties': {'ImageId': 'str',
+                                   'IOUScore': 'float:15.5',
+                                   'BuildingId': 'int'}
+                    }
+    output_crs = {'init': 'epsg:4326'}
 
     # Find detections using threshold/argmax/IoU for test polygons
     true_pos_count = 0
@@ -63,19 +71,9 @@ def score(test_polys, truth_polys, threshold=0.5, truth_index=[],
         if not imageId:
             imageId = os.path.basename(os.path.splitext(resultGeoJsonName)[0])
 
-        driver = ogr.GetDriverByName('geojson')
-        if os.path.exists(resultGeoJsonName):
-            driver.DeleteDataSource(resultGeoJsonName)
-        datasource = driver.CreateDataSource(resultGeoJsonName)
-        layer = datasource.CreateLayer('buildings', geom_type=ogr.wkbPolygon)
-        field_name = ogr.FieldDefn("ImageId", ogr.OFTString)
-        field_name.SetWidth(75)
-        layer.CreateField(field_name)
-        layer.CreateField(ogr.FieldDefn("BuildingId", ogr.OFTInteger))
-        layer.CreateField(ogr.FieldDefn("IOUScore", ogr.OFTReal))
+    feature_list = []
 
-
-    for test_poly in test_polys:
+    for test_poly in tqdm(test_polys):
         if truth_polys:
             iou_list, fidlist = iou(test_poly, truth_polys, truth_index)
             if not iou_list:
@@ -85,47 +83,39 @@ def score(test_polys, truth_polys, threshold=0.5, truth_index=[],
 
             if maxiou >= threshold:
                 true_pos_count += 1
-                truth_index.delete(fidlist[np.argmax(iou_list)], truth_polys[fidlist[np.argmax(iou_list)]].GetEnvelope())
+                truth_index.delete(fidlist[np.argmax(iou_list)], truth_polys[fidlist[np.argmax(iou_list)]].bounds)
                 #del truth_polys[fidlist[np.argmax(iou_list)]]
-                if resultGeoJsonName:
-                    feature = ogr.Feature(layer.GetLayerDefn())
-                    feature.SetField('ImageId', imageId)
-                    feature.SetField('BuildingId', fidlist[np.argmax(iou_list)])
-                    feature.SetField('IOUScore', maxiou)
-                    feature.SetGeometry(test_poly)
 
+                feature = {'geometry': mapping(test_poly),
+                           'properties': {'ImageId': imageId,
+                                          'IOUScore': maxiou,
+                                          'BuildingId': fidlist[np.argmax(iou_list)]
+                                          }
+                           }
 
             else:
                 false_pos_count += 1
 
-                if resultGeoJsonName:
-                    feature = ogr.Feature(layer.GetLayerDefn())
-                    feature.SetField('ImageId', imageId)
-                    feature.SetField('BuildingId', -1)
-                    feature.SetField('IOUScore', maxiou)
-                    feature.SetGeometry(test_poly)
-
-
-
-
-
+                feature = {'geometry': mapping(test_poly),
+                           'properties': {'ImageId': imageId,
+                                          'IOUScore': maxiou,
+                                          'BuildingId': -1
+                                          }
+                           }
 
         else:
             false_pos_count += 1
+            feature = {'geometry': mapping(test_poly),
+                       'properties': {'ImageId': imageId,
+                                      'IOUScore': 0,
+                                      'BuildingId': 0
+                                      }
+                       }
 
-            if resultGeoJsonName:
-                feature = ogr.Feature(layer.GetLayerDefn())
-                feature.SetField('ImageId', imageId)
-                feature.SetField('BuildingId', 0)
-                feature.SetField('IOUScore', 0)
-                feature.SetGeometry(test_poly)
-
-        if resultGeoJsonName:
-            layer.CreateFeature(feature)
-            feature.Destroy()
+        feature_list.append(feature)
 
     if resultGeoJsonName:
-        datasource.Destroy()
+        write_geojson(resultGeoJsonName, feature_list)
 
 
     false_neg_count = truth_poly_count - true_pos_count
