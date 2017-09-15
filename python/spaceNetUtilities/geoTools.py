@@ -154,6 +154,30 @@ def geomGeo2geomPixel(geom, affineObject=[], input_raster='', gdal_geomTransform
 
     return geomTransform
 
+def geomPixel2geomGeo(geom, affineObject=[], input_raster='', gdal_geomTransform=[]):
+    # This function transforms a shapely geometry in pixel coordinates into geospatial coordinates
+    # geom must be shapely geometry
+    # affineObject = rasterio.open(input_raster).affine
+    # gdal_geomTransform = gdal.Open(input_raster).GetGeoTransform()
+    # input_raster is path to raster to gather georectifcation information
+    if not affineObject:
+        if input_raster != '':
+            affineObject = rio.open(input_raster).affine
+        else:
+            affineObject = af.Affine.from_gdal(gdal_geomTransform)
+
+
+    geomTransform = shapely.affinity.affine_transform(geom,
+                                                      [affineObject.a,
+                                                       affineObject.b,
+                                                       affineObject.d,
+                                                       affineObject.e,
+                                                       affineObject.xoff,
+                                                       affineObject.yoff]
+                                                      )
+
+    return geomTransform
+
 
 def returnBoundBox(xOff, yOff, pixDim, inputRaster, targetSR='', pixelSpace=False):
     # Returns Polygon for a specific square defined by a center Pixel and
