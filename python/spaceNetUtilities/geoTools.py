@@ -365,12 +365,12 @@ def createPolygonFromCenterPoint(point, radiusMeters, transform_WGS_To_UTM_Flag=
 
 def createPolygonFromCentroidGDF(gdf, radiusMeters, transform_WGS_To_UTM_Flag=True):
 
+    #TODO needs fixing
     if transform_WGS_To_UTM_Flag:
         transform_WGS84_To_UTM, transform_UTM_To_WGS84 = createUTMTransform(gdf.centroid.values[0])
-        gdf.to_crs()
-        point = shapely.ops.tranform(transform_WGS84_To_UTM, point)
+        gdf.to_crs(transform_WGS84_To_UTM)
 
-    poly = point.Buffer(radiusMeters)
+    poly = gdf.centroids.buffer(radiusMeters)
 
     if transform_WGS_To_UTM_Flag:
         poly = shapely.ops.tranform(transform_UTM_To_WGS84, poly)
