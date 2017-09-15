@@ -328,7 +328,10 @@ def transformGeomToUTM(geom):
 
     return shapely.ops.tranform(transform_WGS84_To_UTM, geom)
 
+
 def getRasterExtent(srcImage):
+    'returns srcImage.transform which is an Affine Object'
+
 
     poly = Polygon(((srcImage.bounds.left, srcImage.bounds.top),
                    (srcImage.bounds.right, srcImage.bounds.top),
@@ -338,7 +341,7 @@ def getRasterExtent(srcImage):
 
 
 
-    return srcImage.affine, \
+    return srcImage.transform, \
            poly, \
            srcImage.bounds.left, \
            srcImage.bounds.top, \
@@ -431,8 +434,8 @@ def cutChipFromMosaic(rasterFileList, shapeFileSrcList, outlineSrc='',outputDire
     #print(rasterFileList[0][0])
     srcImage = rio.open(rasterFileList[0][0])
     geoTrans, poly, ulX, ulY, lrX, lrY = getRasterExtent(srcImage)
-    # geoTrans[1] w-e pixel resolution
-    # geoTrans[5] n-s pixel resolution
+    # geoTrans.a w-e pixel resolution
+    # geoTrans.e n-s pixel resolution
     if outputDirectory=="":
         outputDirectory=os.path.dirname(rasterFileList[0][0])
 
@@ -477,8 +480,8 @@ def cutChipFromMosaic(rasterFileList, shapeFileSrcList, outlineSrc='',outputDire
     idx = 0
     if createPix:
         print(geoTrans)
-        clipSizeMX=clipSizeMX*geoTrans[1]
-        clipSizeMY=abs(clipSizeMY*geoTrans[5])
+        clipSizeMX=clipSizeMX*geoTrans.a
+        clipSizeMY=abs(clipSizeMY*geoTrans.e)
 
     xInterval = np.arange(minX, maxX, clipSizeMX*(1.0-clipOverlap))
     yInterval = np.arange(minY, maxY, clipSizeMY*(1.0-clipOverlap))

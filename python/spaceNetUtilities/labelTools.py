@@ -861,8 +861,8 @@ def createDistanceTransform(rasterSrc, vectorSrc, npDistFileName='', units='pixe
         geoTrans, poly, ulX, ulY, lrX, lrY = gT.getRasterExtent(srcRas_ds)
         transform_WGS84_To_UTM, transform_UTM_To_WGS84, utm_cs = gT.createUTMTransform(poly)
         line = ogr.Geometry(ogr.wkbLineString)
-        line.AddPoint(geoTrans[0], geoTrans[3])
-        line.AddPoint(geoTrans[0]+geoTrans[1], geoTrans[3])
+        line.AddPoint(geoTrans.c, geoTrans.f)
+        line.AddPoint(geoTrans.c+geoTrans.a, geoTrans.f)
 
         line.Transform(transform_WGS84_To_UTM)
         metersIndex = line.Length()
