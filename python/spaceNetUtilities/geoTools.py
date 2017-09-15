@@ -17,6 +17,8 @@ from shapely.geometry.polygon import Polygon
 from shapely.geometry.multipolygon import MultiPolygon
 from shapely.geometry.linestring import LineString
 from shapely.geometry.multilinestring import MultiLineString
+from shapely.geometry import shape
+
 import rtree
 
 from functools import partial
@@ -415,14 +417,15 @@ def cutChipFromMosaic(rasterFileList, shapeFileSrcList, outlineSrc='',outputDire
                       imgIdStart=-1,
                       parrallelProcess=False,
                       noBlackSpace=False,
-                      randomClip=-1):
+                      randomClip=-1,
+                      verbose=False):
     #rasterFileList = [['rasterLocation', 'rasterDescription']]
     # i.e rasterFileList = [['/path/to/3band_AOI_1.tif, '3band'],
     #                       ['/path/to/8band_AOI_1.tif, '8band']
     #                        ]
     # open Base Image
     #print(rasterFileList[0][0])
-    srcImage = gdal.Open(rasterFileList[0][0])
+    srcImage = rio.open(rasterFileList[0][0])
     geoTrans, poly, ulX, ulY, lrX, lrY = getRasterExtent(srcImage)
     # geoTrans[1] w-e pixel resolution
     # geoTrans[5] n-s pixel resolution
@@ -435,7 +438,8 @@ def cutChipFromMosaic(rasterFileList, shapeFileSrcList, outlineSrc='',outputDire
 
     if not createPix:
         transform_WGS84_To_UTM, transform_UTM_To_WGS84, utm_cs = createUTMTransform(poly)
-        poly.Transform(transform_WGS84_To_UTM)
+        poly = shapely.ops.tranform(transform_WGS84_To_UTM, poly)
+
 
     env = poly.GetEnvelope()
     minX = env[0]
@@ -445,22 +449,21 @@ def cutChipFromMosaic(rasterFileList, shapeFileSrcList, outlineSrc='',outputDire
 
     #return poly to WGS84
     if not createPix:
-        poly.Transform(transform_UTM_To_WGS84)
+        poly = shapely.ops.tranform(transform_UTM_To_WGS84, poly)
 
     shapeSrcList = []
     for shapeFileSrc in shapeFileSrcList:
         print(shapeFileSrc[1])
-        shapeSrcList.append([ogr.Open(shapeFileSrc[0],0), shapeFileSrc[1]])
+        shapeSrcList.append([gpd.read_file(shapeFileSrc[0]), shapeFileSrc[1]])
 
 
     if outlineSrc == '':
         geomOutline = poly
     else:
-        outline = ogr.Open(outlineSrc)
-        layer = outline.GetLayer()
-        featureOutLine = layer.GetFeature(0)
-        geomOutlineBase = featureOutLine.GetGeometryRef()
-        geomOutline = geomOutlineBase.Intersection(poly)
+        with fiona.open(outlineSrc) as src:
+            outline = src.next()
+            geomOutlineBase = shape(outline['geometry'])
+            geomOutline = geomOutlineBase.intersection(poly)
 
     chipSummaryList = []
 
@@ -474,14 +477,16 @@ def cutChipFromMosaic(rasterFileList, shapeFileSrcList, outlineSrc='',outputDire
         clipSizeMY=abs(clipSizeMY*geoTrans[5])
 
     xInterval = np.arange(minX, maxX, clipSizeMX*(1.0-clipOverlap))
-    print('minY = {}'.format(minY))
-    print('maxY = {}'.format(maxY))
-    print('clipsizeMX ={}'.format(clipSizeMX))
-    print('clipsizeMY ={}'.format(clipSizeMY))
-
     yInterval = np.arange(minY, maxY, clipSizeMY*(1.0-clipOverlap))
-    print(xInterval)
-    print(yInterval)
+
+    if verbose:
+        print('minY = {}'.format(minY))
+        print('maxY = {}'.format(maxY))
+        print('clipsizeMX ={}'.format(clipSizeMX))
+        print('clipsizeMY ={}'.format(clipSizeMY))
+        print(xInterval)
+        print(yInterval)
+
     for llX in xInterval:
         if parrallelProcess:
             for llY in yInterval:
@@ -513,29 +518,27 @@ def cutChipFromMosaic(rasterFileList, shapeFileSrcList, outlineSrc='',outputDire
 
 
                 if not createPix:
-                    polyCut.Transform(transform_UTM_To_WGS84)
-                ## add debug line do cuts
-                if (polyCut).Intersects(geomOutline):
-                    print("Do it.")
-                    #envCut = polyCut.GetEnvelope()
-                    #minXCut = envCut[0]
-                    #minYCut = envCut[2]
-                    #maxXCut = envCut[1]
-                    #maxYCut = envCut[3]
+                    polyCut = shapely.ops.tranform(transform_UTM_To_WGS84, polyCut)
 
-                    #debug for real
+                ## add debug line do cuts
+                if polyCut.intersects(geomOutline):
+                    if verbose:
+                        print("Do it.")
+                        print('minYCut = {}'.format(minYCut))
+                        print('maxYCut = {}'.format(maxYCut))
+                        print('minXCut = {}'.format(minXCut))
+                        print('maxXCut = {}'.format(maxXCut))
+
+                        print('clipsizeMX ={}'.format(clipSizeMX))
+                        print('clipsizeMY ={}'.format(clipSizeMY))
+
+
                     minXCut = llX
                     minYCut = llY
                     maxXCut = uRX
                     maxYCut = uRY
 
-                    #print('minYCut = {}'.format(minYCut))
-                    #print('maxYCut = {}'.format(maxYCut))
-                    #print('minXCut = {}'.format(minXCut))
-                    #print('maxXCut = {}'.format(maxXCut))
 
-                    #print('clipsizeMX ={}'.format(clipSizeMX))
-                    #print('clipsizeMY ={}'.format(clipSizeMY))
 
 
 
@@ -568,7 +571,8 @@ def createclip(outputDirectory, rasterFileList, shapeSrcList,
                className='',
                baseName='',
                imgId=-1,
-               s3Options=[]):
+               s3Options=[],
+               verbose=False):
 
     #rasterFileList = [['rasterLocation', 'rasterDescription']]
     # i.e rasterFileList = [['/path/to/3band_AOI_1.tif, '3band'],
@@ -611,8 +615,9 @@ def createclip(outputDirectory, rasterFileList, shapeSrcList,
     for chipName, rasterFile in zip(chipNameList, rasterFileList):
         outputFileName = os.path.join(outputDirectory, rasterFile[1], className, chipName)
         ## Clip Image
-        print(rasterFile)
-        print(outputFileName)
+        if verbose:
+            print(rasterFile)
+            print(outputFileName)
         #TODO replace gdalwarp with rasterio and windowed reads
 
         cmd = ["gdalwarp", "-te", "{}".format(minXCut), "{}".format(minYCut),  "{}".format(maxXCut),
