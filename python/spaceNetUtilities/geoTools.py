@@ -567,7 +567,8 @@ def createclip(outputDirectory, rasterFileList, shapeSrcList,
                rasterPolyEnvelope=ogr.CreateGeometryFromWkt("POLYGON EMPTY"),
                className='',
                baseName='',
-               imgId=-1):
+               imgId=-1,
+               s3Options=[]):
 
     #rasterFileList = [['rasterLocation', 'rasterDescription']]
     # i.e rasterFileList = [['/path/to/3band_AOI_1.tif, '3band'],
@@ -609,10 +610,11 @@ def createclip(outputDirectory, rasterFileList, shapeSrcList,
         ## Clip Image
         print(rasterFile)
         print(outputFileName)
-        subprocess.call(["gdalwarp", "-te", "{}".format(minXCut), "{}".format(minYCut),  "{}".format(maxXCut),
+        #TODO replace gdalwarp with rasterio and windowed reads
+        cmd = ["gdalwarp", "-te", "{}".format(minXCut), "{}".format(minYCut),  "{}".format(maxXCut),
                          "{}".format(maxYCut),
                          '-co', 'PHOTOMETRIC=rgb',
-                         rasterFile[0], outputFileName])
+                         rasterFile[0], outputFileName]
 
     baseLayerRasterName = os.path.join(outputDirectory, rasterFileList[0][1], className, chipNameList[0])
     outputFileName = os.path.join(outputDirectory, rasterFileList[0][1], chipNameList[0])
