@@ -436,16 +436,22 @@ def createAOIName(AOI_Name, AOI_Num,
                   createPix=False,
                   createSummaryCSVChallenge=True,
                   csvLabel='All',
-                  featureName='Buildings'):
+                  featureName='Buildings',
+                  verbose=False):
 
     srcImageryList = []
+
+    # Clip Imagery to the the AOI provided.  This is important for areas that are completely labeled.
     if clipImageryToAOI:
 
 
         for srcImagery in srcImageryListOrig:
 
-            print(srcImagery)
+            if verbose:
+                print(srcImagery)
+
             AOI_HighResMosaicName = os.path.join(outputDirectory, 'AOI_{}_{}_{}.vrt'.format(AOI_Num, AOI_Name, srcImagery[1]))
+
             if vrtMosaic:
                 AOI_HighResMosaicClipName = AOI_HighResMosaicName.replace('.vrt', 'clipped.vrt')
             else:
@@ -477,12 +483,14 @@ def createAOIName(AOI_Name, AOI_Num,
         # i.e rasterFileList = [['/path/to/3band_AOI_1.tif, '3band'],
         #                       ['/path/to/8band_AOI_1.tif, '8band']
         #                        ]
+
     chipSummaryList = gT.cutChipFromMosaic(srcImageryList, srcVectorFileList, outlineSrc=srcVectorAOIFile,
                                            outputDirectory=outputDirectory, outputPrefix='',
                                            clipSizeMX=windowSizeMeters, clipSizeMY=windowSizeMeters, clipOverlap=clipOverlap,
                                            minpartialPerc=minpartialPerc, createPix=createPix,
                                            baseName='AOI_{}_{}'.format(AOI_Num, AOI_Name),
-                                           imgIdStart=1)
+                                           imgIdStart=1,
+                                           verbose=verbose)
 
 
     outputCSVSummaryName = 'AOI_{}_{}_{}_{}_solutions.csv'.format(AOI_Num, AOI_Name, csvLabel,featureName)
