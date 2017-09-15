@@ -182,35 +182,18 @@ def geomPixel2geomGeo(geom, affineObject=[], input_raster='', gdal_geomTransform
     return geomTransform
 
 
-def returnBoundBox(xOff, yOff, pixDim, inputRaster, targetSR='', pixelSpace=False):
-    # Returns Polygon for a specific square defined by a center Pixel and
-    # number of pixels in each dimension.
-    # Leave targetSR as empty string '' or specify it as a osr.SpatialReference()
-    # targetSR = osr.SpatialReference()
-    # targetSR.ImportFromEPSG(4326)
-    if targetSR == '':
-        targetSR = osr.SpatialReference()
-        targetSR.ImportFromEPSG(4326)
-    xCord = [xOff - pixDim / 2, xOff - pixDim / 2, xOff + pixDim / 2,
-             xOff + pixDim / 2, xOff - pixDim / 2]
-    yCord = [yOff - pixDim / 2, yOff + pixDim / 2, yOff + pixDim / 2,
-             yOff - pixDim / 2, yOff - pixDim / 2]
+def returnBoundBox(xCenter, yCenter, pixDim, affineObject=[], input_raster='', gdal_geomTransform=[], pixelSpace=False):
 
-    ring = ogr.Geometry(ogr.wkbLinearRing)
-    for idx in xrange(len(xCord)):
-        if pixelSpace == False:
-            geom = pixelToGeoCoord(xCord[idx], yCord[idx], inputRaster)
-            ring.AddPoint(geom[0], geom[1], 0)
-        else:
-            ring.AddPoint(xCord[idx], yCord[idx], 0)
+    geom = Point(xCenter, yCenter)
+    geom = geom.buffer(pixDim)
+    geom = geom.envelope
 
-    poly = ogr.Geometry(ogr.wkbPolygon)
-    if pixelSpace == False:
-        poly.AssignSpatialReference(targetSR)
+    if not pixelSpace:
+        geom = geomPixel2geomGeo(geom, affineObject=affineObject, input_raster=input_raster, gdal_geomTransform=gdal_geomTransform)
+    else:
+        geom
 
-    poly.AddGeometry(ring)
-
-    return poly
+    return geom
 
 def createBoxFromLine(tmpGeom, ratio=1, halfWidth=-999, transformRequired=True, transform_WGS84_To_UTM='', transform_UTM_To_WGS84=''):
     # create Polygon Box Oriented with the line
