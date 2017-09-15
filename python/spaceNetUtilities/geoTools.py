@@ -615,6 +615,8 @@ def createclip(outputDirectory, rasterFileList, shapeSrcList,
                          "{}".format(maxYCut),
                          '-co', 'PHOTOMETRIC=rgb',
                          rasterFile[0], outputFileName]
+        cmd.extend(s3Options)
+        subprocess.call(cmd)
 
     baseLayerRasterName = os.path.join(outputDirectory, rasterFileList[0][1], className, chipNameList[0])
     outputFileName = os.path.join(outputDirectory, rasterFileList[0][1], chipNameList[0])
