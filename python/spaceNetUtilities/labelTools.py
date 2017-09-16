@@ -14,33 +14,37 @@ import scipy.io
 from scipy.sparse import csr_matrix
 import json
 import re
+import shapely
+import fiona
+import geopandas as gpd
+import rasterio
+from scipy.ndimage import morphology
+from rasterio import features
+from shapely.geometry.polygon import Polygon
+from shapely.geometry.multipolygon import MultiPolygon
+from shapely.geometry.linestring import LineString
+from shapely.geometry.multilinestring import MultiLineString
+from shapely.geometry import shape
 from osgeo import gdal, osr, ogr, gdalnumeric
 
 def evaluateLineStringPlane(geom, label='Airplane'):
-    ring = ogr.Geometry(ogr.wkbLinearRing)
 
-    for i in range(0, geom.GetPointCount()):
-        # GetPoint returns a tuple not a Geometry
-        pt = geom.GetPoint(i)
-        ring.AddPoint(pt[0], pt[1])
-    pt = geom.GetPoint(0)
-    ring.AddPoint(pt[0], pt[1])
-    poly = ogr.Geometry(ogr.wkbPolygon)
-    poly.AddGeometry(ring)
+    poly = Polygon(geom)
+
+    noseToTail = LineString((geom.coords[0], geom.coords[2]))
+    wingLength = LineString((geom.coords[1], geom.coords[3]))
+
+
 
     transform_WGS84_To_UTM, transform_UTM_To_WGS84, utm_cs = gT.createUTMTransform(geom)
-    geom.Transform(transform_WGS84_To_UTM)
-    pt0 = geom.GetPoint(0) # Tail
-    pt1 = geom.GetPoint(1) # Wing
-    pt2 = geom.GetPoint(2) # Nose
-    pt3 = geom.GetPoint(3) # Wing
-    Length = math.sqrt((pt2[0]-pt0[0])**2 + (pt2[1]-pt0[1])**2)
-    Width = math.sqrt((pt3[0] - pt1[0])**2 + (pt3[1] - pt1[1])**2)
+
+    noseToTail = shapely.ops.tranform(transform_WGS84_To_UTM, noseToTail)
+    wingLength = shapely.ops.tranform(transform_WGS84_To_UTM, wingLength)
+
+    Length = noseToTail.length
+    Width = wingLength.length
     Aspect = Length/Width
-    Direction = (math.atan2(pt2[0]-pt0[0], pt2[1]-pt0[1])*180/math.pi) % 360
-
-
-    geom.Transform(transform_UTM_To_WGS84)
+    Direction = (math.atan2(geom.coords[2][0]-geom.coords[0][0], geom.coords[2][1]-geom.coords[0][1])*180/math.pi) % 360
 
     return [poly, Length, Width, Aspect, Direction]
 
@@ -48,13 +52,13 @@ def evaluateLineStringBoat(geom, label='Boat', aspectRatio=3):
 
 
     transform_WGS84_To_UTM, transform_UTM_To_WGS84, utm_cs = gT.createUTMTransform(geom)
+    geom = shapely.ops.tranform(transform_WGS84_To_UTM, geom)
 
-    geom.Transform(transform_WGS84_To_UTM)
-    pt0 = geom.GetPoint(0) # Stern
-    pt1 = geom.GetPoint(1) # Bow
+    pt0 = geom.coords[0] # Stern
+    pt1 = geom.coords[1] # Bow
     Length = math.sqrt((pt1[0]-pt0[0])**2 + (pt1[1]-pt0[1])**2)
     Direction = (math.atan2(pt1[0]-pt0[0], pt1[1]-pt0[1])*180/math.pi) % 360
-    geom.Transform(transform_UTM_To_WGS84)
+
 
     poly, areaM, angRad, lengthM = gT.createBoxFromLine(geom, aspectRatio,
                                                               transformRequired=True,
@@ -66,178 +70,96 @@ def evaluateLineStringBoat(geom, label='Boat', aspectRatio=3):
 
     return [poly, Length, Width, Aspect, Direction]
 
+def evaluateLineStringFeature(geom, labelType='Boat', labelName='', aspectRatio=3):
 
-def convertLabelStringToPoly(shapeFileSrc, outGeoJSon, labelType='Airplane'):
+    if labelName=='':
+        labelName = labelType
+    if labelType=='Boat':
 
-        shapeSrc = ogr.Open(shapeFileSrc)
-        source_layer = shapeSrc.GetLayer()
-        source_srs = source_layer.GetSpatialRef()
+        return evaluateLineStringBoat(geom, label=labelName, aspectRatio=aspectRatio)
+
+    elif labelType=='Airplane':
+
+        return evaluateLineStringPlane(geom, label=labelName)
+
+    else: # Default treat like boat
+        return evaluateLineStringBoat(geom, label=labelName, aspectRatio=aspectRatio)
+
+
+def convertLabelStringToPoly(shapeFileSrc, outGeoJSon, labelType='Airplane', aspectRatio=3, labelName=''):
+
+        source_layer_gdf = gpd.read_file(shapeFileSrc)
         # Create the output Layer
-        outDriver = ogr.GetDriverByName("geojson")
         if os.path.exists(outGeoJSon):
-            outDriver.DeleteDataSource(outGeoJSon)
+            fiona.remove(outGeoJSon, 'GeoJSON').DeleteDataSource(outGeoJSon)
 
+        source_layer_gdf["geometry"], \
+        source_layer_gdf["Length_m"], \
+        source_layer_gdf["Width_m"], \
+        source_layer_gdf["Aspect(L/W)"], \
+        source_layer_gdf["compassDeg"] = source_layer_gdf.apply(
+            lambda x: evaluateLineStringFeature(x['geometry'],
+                                                labelType=labelType,
+                                                aspectRatio=aspectRatio,
+                                                labelName=labelName
+                                                ),
+            axis=1)
 
-        outDataSource = outDriver.CreateDataSource(outGeoJSon)
-        outLayer = outDataSource.CreateLayer("groundTruth", source_srs, geom_type=ogr.wkbPolygon)
-        # Add input Layer Fields to the output Layer
-        inLayerDefn = source_layer.GetLayerDefn()
-        for i in range(0, inLayerDefn.GetFieldCount()):
-            fieldDefn = inLayerDefn.GetFieldDefn(i)
-            outLayer.CreateField(fieldDefn)
-        outLayer.CreateField(ogr.FieldDefn("Length_m", ogr.OFTReal))
-        outLayer.CreateField(ogr.FieldDefn("Width_m", ogr.OFTReal))
-        outLayer.CreateField(ogr.FieldDefn("Aspect(L/W)", ogr.OFTReal))
-        outLayer.CreateField(ogr.FieldDefn("compassDeg", ogr.OFTReal))
-
-        outLayerDefn = outLayer.GetLayerDefn()
-        for inFeature in source_layer:
-
-            outFeature = ogr.Feature(outLayerDefn)
-
-            for i in range(0, inLayerDefn.GetFieldCount()):
-                outFeature.SetField(inLayerDefn.GetFieldDefn(i).GetNameRef(), inFeature.GetField(i))
-
-            geom = inFeature.GetGeometryRef()
-            if labelType == 'Airplane':
-                poly, Length, Width, Aspect, Direction = evaluateLineStringPlane(geom, label='Airplane')
-            elif labelType == 'Boat':
-                poly, Length, Width, Aspect, Direction = evaluateLineStringBoat(geom, label='Boat')
-
-            outFeature.SetGeometry(poly)
-            outFeature.SetField("Length_m", Length)
-            outFeature.SetField("Width_m", Width)
-            outFeature.SetField("Aspect(L/W)", Aspect)
-            outFeature.SetField("compassDeg", Direction)
-
-            outLayer.CreateFeature(outFeature)
-
-
-def createTruthPixelLinePickle(truthLineFile, pickleLocation=''):
-    if pickleLocation=='':
-        extension = os.path.splitext(truthLineFile)[1]
-        pickleLocation = truthLineFile.replace(extension, 'Pixline.p')
-    if truthLineFile != '':
-        # get Source Line File Information
-        shapef = ogr.Open(truthLineFile, 0)
-        truthLayer = shapef.GetLayer()
-        pt1X = []
-        pt1Y = []
-        pt2X = []
-        pt2Y = []
-        for tmpFeature in truthLayer:
-            tmpGeom = tmpFeature.GetGeometryRef()
-            for i in range(0, tmpGeom.GetPointCount()):
-                pt = tmpGeom.GetPoint(i)
-
-                if i == 0:
-                    pt1X.append(pt[0])
-                    pt1Y.append(pt[1])
-                elif i == 1:
-                    pt2X.append(pt[0])
-                    pt2Y.append(pt[1])
-
-        lineData = {'pt1X': np.asarray(pt1X),
-                    'pt1Y': np.asarray(pt1Y),
-                    'pt2X': np.asarray(pt2X),
-                    'pt2Y': np.asarray(pt2Y)
-                    }
-
-        with open(pickleLocation, 'wb') as f:
-            pickle.dump(lineData, f)
-            # get Source Line File Information
-
-
-def createTruthPixelPolyPickle(truthPoly, pickleLocation=''):
-    # returns dictionary with list of minX, maxX, minY, maxY
-
-    if pickleLocation=='':
-        extension = os.path.splitext(truthPoly)[1]
-        pickleLocation = truthPoly.replace(extension, 'PixPoly.p')
-    if truthPoly != '':
-        # get Source Line File Information
-        shapef = ogr.Open(truthPoly, 0)
-        truthLayer = shapef.GetLayer()
-        envList = []
-
-        for tmpFeature in truthLayer:
-            tmpGeom = tmpFeature.GetGeometryRef()
-            env = tmpGeom.GetEvnelope()
-            envList.append(env)
-
-        envArray = np.asarray(envList)
-        envelopeData = {'minX': envArray[:,0],
-                        'maxX': envArray[:,1],
-                        'minY': envArray[:,2],
-                        'maxY': envArray[:,3]
-                        }
-
-
-        with open(pickleLocation, 'wb') as f:
-            pickle.dump(envelopeData, f)
-            # get Source Line File Information
+        source_layer_gdf.to_file(outGeoJSon, driver='GeoJSON')
 
 
 def createNPPixArrayDist(rasterSrc, vectorSrc, npDistFileName='', units='pixels'):
-
+    #TODO replace gdal.ComputeProximity with scipy.ndimage.morphology.distance_transform_edt
+    # image = features.rasterize(
+            # ((g, 255) for g, v in shapes),
+            # out_shape=src.shape,
+    #          transform=src.transform)
     ## open source vector file that truth data
-    source_ds = ogr.Open(vectorSrc)
-    source_layer = source_ds.GetLayer()
 
-    ## extract data from src Raster File to be emulated
-    ## open raster file that is to be emulated
-    srcRas_ds = gdal.Open(rasterSrc)
-    cols = srcRas_ds.RasterXSize
-    rows = srcRas_ds.RasterYSize
-    noDataValue = 0
+    ## calculate pixelSize in meters i.e. GSD
 
-    if units=='meters':
-        geoTrans, poly, ulX, ulY, lrX, lrY = gT.getRasterExtent(srcRas_ds)
-        transform_WGS84_To_UTM, transform_UTM_To_WGS84, utm_cs = gT.createUTMTransform(poly)
-        line = ogr.Geometry(ogr.wkbLineString)
-        line.AddPoint(geoTrans[0], geoTrans[3])
-        line.AddPoint(geoTrans[0]+geoTrans[1], geoTrans[3])
 
-        line.Transform(transform_WGS84_To_UTM)
-        metersIndex = line.Length()
-    else:
-        metersIndex = 1
 
-    ## create First raster memory layer
-    memdrv = gdal.GetDriverByName('MEM')
-    dst_ds = memdrv.Create('', cols, rows, 1, gdal.GDT_Byte)
-    dst_ds.SetGeoTransform(srcRas_ds.GetGeoTransform())
-    dst_ds.SetProjection(srcRas_ds.GetProjection())
-    band = dst_ds.GetRasterBand(1)
-    band.SetNoDataValue(noDataValue)
+    with rasterio.open(rasterSrc) as srcRas_ds:
+        src_transform = srcRas_ds.transform
+        src_shape = srcRas_ds.shape
+        ## calculate pixel size in meters i.e. GSD
+        if units == 'meters':
+            geoTrans, poly, ulX, ulY, lrX, lrY = gT.getRasterExtent(srcRas_ds)
+            transform_WGS84_To_UTM, transform_UTM_To_WGS84, utm_cs = gT.createUTMTransform(poly)
+            line = LineString([(geoTrans.c, geoTrans.f),
+                               (geoTrans.c + geoTrans.a, geoTrans.f + geoTrans.e)
+                               ]
+                              )
 
-    gdal.RasterizeLayer(dst_ds, [1], source_layer, burn_values=[255])
-    srcBand = dst_ds.GetRasterBand(1)
+            line = shapely.ops.tranform(transform_WGS84_To_UTM, line)
+            metersIndex = line.lenth
+        else:
+            metersIndex = 1
 
-    memdrv2 = gdal.GetDriverByName('MEM')
-    prox_ds = memdrv2.Create('', cols, rows, 1, gdal.GDT_Int16)
-    prox_ds.SetGeoTransform(srcRas_ds.GetGeoTransform())
-    prox_ds.SetProjection(srcRas_ds.GetProjection())
-    proxBand = prox_ds.GetRasterBand(1)
-    proxBand.SetNoDataValue(noDataValue)
+    ## Burn source layer into image
+    source_layer = gpd.read_file(vectorSrc)
+    shapes = ((geom,value) for geom, value in zip(source_layer.geometry, 255))
+    baseImage = features.rasterize(shapes,
+                               out_shape=src_shape,
+                               transform=src_transform)
 
-    options = ['NODATA=0']
+    ## calculate Distance between Feature point and closest background pixel
+    # distance_transform_edt takes the place of ComputeProximity
 
-    gdal.ComputeProximity(srcBand, proxBand, options)
+    #calculate distance from Any point inside a feature to the closest background pixel
+    interiorDist = morphology.distance_transform_edt(baseImage)
 
-    memdrv3 = gdal.GetDriverByName('MEM')
-    proxIn_ds = memdrv3.Create('', cols, rows, 1, gdal.GDT_Int16)
-    proxIn_ds.SetGeoTransform(srcRas_ds.GetGeoTransform())
-    proxIn_ds.SetProjection(srcRas_ds.GetProjection())
-    proxInBand = proxIn_ds.GetRasterBand(1)
-    proxInBand.SetNoDataValue(noDataValue)
-    options = ['NODATA=0', 'VALUES=0']
-    gdal.ComputeProximity(srcBand, proxInBand, options)
+    #inverse Image so that background is a feature and interior feature values = 0
+    inverseImage = baseImage
+    inverseImage[inverseImage==0]=200
+    inverseImage[inverseImage==255]=0
 
-    proxIn = gdalnumeric.BandReadAsArray(proxInBand)
-    proxOut = gdalnumeric.BandReadAsArray(proxBand)
+    # calculate distance from any point exterior a feature to the closet feature pixel
+    exteriorDist = morphology.distance_transform_edt(inverseImage)
 
-    proxTotal = proxIn.astype(float) - proxOut.astype(float)
+
+    proxTotal = interiorDist - exteriorDist
     proxTotal = proxTotal*metersIndex
 
     if npDistFileName != '':
