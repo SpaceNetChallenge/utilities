@@ -183,6 +183,37 @@ def geomPixel2geomGeo(geom, affineObject=[], input_raster='', gdal_geomTransform
 
     return geomTransform
 
+def geoDFtoPixDF(geoDF, affineObject=[], input_raster='', gdal_geomTransform=[]):
+
+    geomList =[]
+    for geom in geoDF.geometry.values:
+        geomList.append(geomGeo2geomPixel(geom,
+                                          affineObject=affineObject,
+                                          input_raster=input_raster,
+                                          gdal_geomTransform=gdal_geomTransform)
+                        )
+
+    pixDF = geoDF.copy()
+    pixDF['geometry']=geomList
+
+
+    return pixDF
+
+
+def pixDFtoGeoDF(pixDF, affineObject=[], input_raster='', gdal_geomTransform=[]):
+    geomList = []
+    for geom in pixDF.geometry.values:
+        geomList.append(geomPixel2geomGeo(geom,
+                                          affineObject=affineObject,
+                                          input_raster=input_raster,
+                                          gdal_geomTransform=gdal_geomTransform)
+                        )
+
+    geoDF = pixDF.copy()
+    geoDF['geometry'] = geomList
+
+    return geoDF
+
 
 def returnBoundBox(xCenter, yCenter, pixDim, affineObject=[], input_raster='', gdal_geomTransform=[], pixelSpace=False):
 
@@ -410,9 +441,10 @@ def clipShapeFile(geoDF, outputFileName, polyToCut, minpartialPerc=0.0, shapeLab
     else:
         geoDF['origarea'] = geoDF.area
 
-    #TODO must implement different case for lines
+    #TODO must implement different case for lines and for spatialIndex
 
-    cutGeoDF = geoDF.loc[geoDF.intersection(polyToCut).area/geoDF['origarea'] > minpartialPerc]
+
+    cutGeoDF = geoDF.loc[geoDF.intersection(polyToCut).area/geoDF['origarea'] > minpartialPerc].copy()
     cutGeoDF['partialDec'] = cutGeoDF.area/cutGeoDF['origarea']
     cutGeoDF['truncated'] = (cutGeoDF['partialDec']==1.0).astype(int)
 
