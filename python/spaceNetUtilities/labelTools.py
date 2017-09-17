@@ -109,16 +109,14 @@ def convertLabelStringToPoly(shapeFileSrc, outGeoJSon, labelType='Airplane', asp
 
 
 def createNPPixArrayDist(rasterSrc, vectorSrc, npDistFileName='', units='pixels'):
-    #TODO replace gdal.ComputeProximity with scipy.ndimage.morphology.distance_transform_edt
+    #TODO evaluate scipy.ndimage.morphology.distance_transform_edt vs cv2.distanceTransform for speed
+
     # image = features.rasterize(
-            # ((g, 255) for g, v in shapes),
-            # out_shape=src.shape,
-    #          transform=src.transform)
+    #         ((g, 255) for g, v in shapes),
+    #         out_shape=src.shape,
+    #         transform=src.transform)
     ## open source vector file that truth data
-
     ## calculate pixelSize in meters i.e. GSD
-
-
 
     with rasterio.open(rasterSrc) as srcRas_ds:
         src_transform = srcRas_ds.transform
@@ -168,30 +166,80 @@ def createNPPixArrayDist(rasterSrc, vectorSrc, npDistFileName='', units='pixels'
     return proxTotal
 
 
-def createGeoJSONFromRaster(geoJsonFileName, array2d, geom, proj,
-                            layerName="BuildingID",
-                            fieldName="BuildingID"):
+def polygonize(imageArray, transformAffineObject, maskValue=0):
 
-    memdrv = gdal.GetDriverByName('MEM')
-    src_ds = memdrv.Create('', array2d.shape[1], array2d.shape[0], 1)
-    src_ds.SetGeoTransform(geom)
-    src_ds.SetProjection(proj)
-    band = src_ds.GetRasterBand(1)
-    band.WriteArray(array2d)
+    mask = imageArray!=maskValue
 
-    dst_layername = "BuildingID"
-    drv = ogr.GetDriverByName("geojson")
-    dst_ds = drv.CreateDataSource(geoJsonFileName)
-    dst_layer = dst_ds.CreateLayer(layerName, srs=None)
+    featureGenerator = features.shapes(imageArray,
+                             transform=transformAffineObject,
+                             mask=mask)
 
-    fd = ogr.FieldDefn(fieldName, ogr.OFTInteger)
-    dst_layer.CreateField(fd)
-    dst_field = 1
+    return featureGenerator
 
-    gdal.Polygonize(band, None, dst_layer, dst_field, [], callback=None)
+def createGDFfromShapes(featureGenerator, fieldName='rasterVal'):
 
-    return
+    geomList = []
+    rasterValList = []
 
+    for feat in featureGenerator:
+        geomList.append(shape(feat[0]))
+        rasterValList.append(feat[1])
+
+    featureGDF = gpd.GeoDataFrame({'geometry': geomList, fieldName: rasterValList})
+
+    return featureGDF
+
+
+def createGeoJSONFromRaster(geoJsonFileName,
+                            imageArray,
+                            geom,
+                            crs,
+                            maskValue=0,
+                            fieldName="rasterVal"):
+
+    featureGenerator = polygonize(imageArray,
+                                  geom,
+                                  maskValue=maskValue,
+                                  fieldName=fieldName)
+
+    featureGDF = createGDFfromShapes(featureGenerator,
+                                     fieldName=fieldName)
+    featureGDF.crs = crs
+
+    gT.exporttogeojson(geoJsonFileName, featureGDF)
+
+    return featureGDF
+
+
+def createRasterFromGeoJson(srcGeoJson,
+                            srcRasterFileName,
+                            outRasterFileName,
+                            burnValue=255,
+                            burnValueField=''):
+
+    srcGDF = gpd.read_file(srcGeoJson)
+    if burnValueField == '':
+        featureList = ((geom, value) for geom, value in zip(srcGDF.geometry, burnValue))
+    else:
+        featureList = ((geom, value) for geom, value in zip(srcGDF.geometry, srcGDF[burnValueField]))
+
+    with rasterio.open(srcRasterFileName) as rst:
+        meta = rst.meta.copy()
+        meta.update(count=1)
+        meta.update(dtype='uint8')
+
+        with rasterio.open(
+                outRasterFileName, 'w',
+                **meta) as dst:
+
+
+            burned = features.rasterize(shapes=featureList,
+                                        out=rst.shape,
+                                        transform=rst.transform)
+
+            dst.write(burned, indexes=1)
+
+    return srcGDF
 
 def createCSVSummaryFile(chipSummaryList, outputFileName, rasterChipDirectory='', replaceImageID='',
                          createProposalsFile=False,
@@ -232,6 +280,7 @@ def createCSVSummaryFile(chipSummaryList, outputFileName, rasterChipDirectory=''
                     writerTotal.writerow([imageId, -1,
                                           'POLYGON EMPTY', 'POLYGON EMPTY'])
 
+    return 1
 
 def createCSVSummaryFileFromJsonList(geoJsonList, outputFileName, chipnameList=[],
                                      input='Geo',
@@ -266,6 +315,7 @@ def createCSVSummaryFileFromJsonList(geoJsonList, outputFileName, chipnameList=[
             except:
                 pass
 
+    return 1
 
 
 def createCSVSummaryFromDirectory(geoJsonDirectory, rasterFileDirectoryList,
@@ -320,28 +370,7 @@ def createCSVSummaryFromDirectory(geoJsonDirectory, rasterFileDirectoryList,
     if verbose:
         print("finished")
 
-
-
-def createRasterFromGeoJson(srcGeoJson, srcRasterFileName, outRasterFileName):
-    NoData_value = 0
-    source_ds = ogr.Open(srcGeoJson)
-    source_layer = source_ds.GetLayer()
-
-    srcRaster = gdal.Open(srcRasterFileName)
-
-
-    # Create the destination data source
-    target_ds = gdal.GetDriverByName('GTiff').Create(outRasterFileName, srcRaster.RasterXSize, srcRaster.RasterYSize, 1, gdal.GDT_Byte)
-    target_ds.SetGeoTransform(srcRaster.GetGeoTransform())
-    target_ds.SetProjection(srcRaster.GetProjection())
-    band = target_ds.GetRasterBand(1)
-    band.SetNoDataValue(NoData_value)
-
-    # Rasterize
-    gdal.RasterizeLayer(target_ds, [1], source_layer, burn_values=[1])
-    band.FlushCache()
-
-
+    return 1
 
 
 def createAOIName(AOI_Name, AOI_Num,
@@ -418,8 +447,6 @@ def createAOIName(AOI_Name, AOI_Num,
     createCSVSummaryFile(chipSummaryList, outputCSVSummaryName, rasterChipDirectory='', replaceImageID='',
                          createProposalsFile=False,
                          pixPrecision=2)
-
-
 
 
 def prettify(elem):
