@@ -1,12 +1,12 @@
-import os
+import argparse
 import glob
+import os
 import random
+
+# from spaceNetUtilities.labelTools import sbdLabel
+from spaceNetUtilities import geoTools as gT
 from spaceNetUtilities.labelTools import darkNetLabel
 from spaceNetUtilities.labelTools import pascalVOCLabel
-#from spaceNetUtilities.labelTools import sbdLabel
-
-from spaceNetUtilities import geoTools as gT
-import argparse
 
 
 def processRasterChip(rasterImage, rasterDescription, geojson, geojsonDescription, outputDirectory='',
@@ -77,26 +77,26 @@ def processChipSummaryList(chipSummaryList, outputDirectory='', annotationType='
 
         if annotationType=='PASCALVOC2012':
             entry = pascalVOCLabel.geoJsonToPASCALVOC2012(annotationName, chipSummary['geoVectorName'], chipSummary['rasterSource'],
-                                              dataset='spacenetV2',
-                                              folder_name='spacenetV2',
-                                              annotationStyle=annotationType,
-                                              segment=True,
-                                              bufferSizePix=2.5,
-                                              convertTo8Bit=convertTo8Bit,
-                                              outputPixType=outputPixType,
-                                              outputFormat=outputFormat,
-                                              bboxResize=bboxResize
-                                              )
+                                                          dataset='spacenetV2',
+                                                          folder_name='spacenetV2',
+                                                          annotationStyle=annotationType,
+                                                          segment=True,
+                                                          bufferSizePix=2.5,
+                                                          convertTo8Bit=convertTo8Bit,
+                                                          outputPixType=outputPixType,
+                                                          outputFormat=outputFormat,
+                                                          bboxResize=bboxResize
+                                                          )
         elif annotationType=='DARKNET':
             entry = darkNetLabel.geoJsonToDARKNET(annotationName, chipSummary['geoVectorName'], chipSummary['rasterSource'],
-                                        dataset='spacenetV2',
-                                        folder_name='spacenetV2',
-                                        annotationStyle=annotationType,
-                                        convertTo8Bit=convertTo8Bit,
-                                        outputPixType=outputPixType,
-                                        outputFormat=outputFormat,
-                                        bboxResize=bboxResize
-                                        )
+                                                  dataset='spacenetV2',
+                                                  folder_name='spacenetV2',
+                                                  annotationStyle=annotationType,
+                                                  convertTo8Bit=convertTo8Bit,
+                                                  outputPixType=outputPixType,
+                                                  outputFormat=outputFormat,
+                                                  bboxResize=bboxResize
+                                                  )
 
         # elif annotationType=='SBD':
         # TODO implement SBD in new framework
