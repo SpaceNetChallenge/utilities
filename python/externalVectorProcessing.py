@@ -3,7 +3,6 @@ from spaceNetUtilities import labelTools as lT
 from osgeo import gdal, ogr, osr
 import argparse
 import os
-import subprocess
 import glob
 
 

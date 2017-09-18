@@ -1,6 +1,5 @@
 import numpy as np
 import os
-import csv
 import subprocess
 import math
 import geopandas as gpd
@@ -11,7 +10,6 @@ import pandas as pd
 from shapely.geometry import Point
 import pyproj
 import fiona
-from fiona.crs import from_epsg
 from shapely.geometry.polygon import Polygon
 from shapely.geometry.multipolygon import MultiPolygon
 from shapely.geometry.linestring import LineString
