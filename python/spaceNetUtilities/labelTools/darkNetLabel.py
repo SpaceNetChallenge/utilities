@@ -1,14 +1,7 @@
-import numpy as np
 import os
 from spaceNetUtilities.labelTools import coreLabelTools as clT
-from PIL import Image
-from xml.etree.ElementTree import Element, SubElement
-from xml.etree import ElementTree
-from xml.dom import minidom
-import geopandas as gpd
 import rasterio
 from shapely.geometry import box
-from rasterio import features
 
 def convertPixDimensionToPercent(size, shpBox):
     '''Input = image size: (w,h), box: [x0, y0, x1, y1]'''
