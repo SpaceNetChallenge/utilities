@@ -1,4 +1,4 @@
-from spaceNetUtilities import geoTools as gT
+from spacenetutilities import geoTools as gT
 import geopandas as gpd
 import glob
 import pandas as pd

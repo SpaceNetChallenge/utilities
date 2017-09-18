@@ -1,5 +1,5 @@
-from spaceNetUtilities import geoTools as gT
-from spaceNetUtilities import labelTools as lT
+from spacenetutilities import geoTools as gT
+from spacenetutilities import labeltools as lT
 from osgeo import gdal, ogr, osr
 import argparse
 import os

@@ -13,7 +13,7 @@ from shapely.geometry.polygon import Polygon
 from shapely.geometry.linestring import LineString
 from shapely.geometry import shape, box
 from shapely import affinity
-from spaceNetUtilities import geoTools as gT
+from spacenetutilities import geoTools as gT
 
 def evaluateLineStringPlane(geom, label='Airplane'):
 

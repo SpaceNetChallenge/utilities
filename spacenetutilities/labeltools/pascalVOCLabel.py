@@ -6,7 +6,7 @@ from xml.dom import minidom
 import geopandas as gpd
 import rasterio
 from rasterio import features
-from spaceNetUtilities.labelTools import coreLabelTools as clT
+from spacenetutilities.labeltools import coreLabelTools as clT
 
 def prettify(elem):
     """Return a pretty-printed XML string for the Element.

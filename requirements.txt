@@ -1,13 +1,13 @@
+cython
 numpy
 pandas
 rtree
 shapely
 fiona
 geopandas
-rasterio
+rasterio>=1.0a9
 scipy
-PIL
-xml
+pillow
 tqdm
 affine
 pyproj

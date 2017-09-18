@@ -1,5 +1,5 @@
 import os
-from spaceNetUtilities.labelTools import coreLabelTools as clT
+from spacenetutilities.labeltools import coreLabelTools as clT
 import rasterio
 from shapely.geometry import box
 

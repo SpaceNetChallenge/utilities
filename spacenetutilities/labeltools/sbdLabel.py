@@ -1,6 +1,6 @@
 import numpy as np
 import os
-from spaceNetUtilities.labelTools import coreLabelTools as clT
+from spacenetutilities.labeltools import coreLabelTools as clT
 import scipy.io
 from scipy.sparse import csr_matrix
 import json
