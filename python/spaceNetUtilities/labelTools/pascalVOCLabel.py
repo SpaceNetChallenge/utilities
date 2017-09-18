@@ -1,4 +1,3 @@
-import numpy as np
 import os
 from spaceNetUtilities.labelTools import coreLabelTools as clT
 from PIL import Image
