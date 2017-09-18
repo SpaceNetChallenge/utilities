@@ -1,9 +1,8 @@
-from osgeo import gdal, osr, ogr, gdalnumeric
 import numpy as np
 import os
-import geoTools as gT
+from spaceNetUtilities import geoTools as gT
 import math
-import cPickle as pickle
+import pickle
 import csv
 import glob
 from PIL import Image
@@ -15,33 +14,38 @@ import scipy.io
 from scipy.sparse import csr_matrix
 import json
 import re
-
+import shapely
+import fiona
+import geopandas as gpd
+import rasterio
+from scipy.ndimage import morphology
+from rasterio import features
+from shapely.geometry.polygon import Polygon
+from shapely.geometry.multipolygon import MultiPolygon
+from shapely.geometry.linestring import LineString
+from shapely.geometry.multilinestring import MultiLineString
+from shapely.geometry import shape, box
+from shapely import affinity
+from osgeo import gdal, osr, ogr, gdalnumeric
 
 def evaluateLineStringPlane(geom, label='Airplane'):
-    ring = ogr.Geometry(ogr.wkbLinearRing)
 
-    for i in range(0, geom.GetPointCount()):
-        # GetPoint returns a tuple not a Geometry
-        pt = geom.GetPoint(i)
-        ring.AddPoint(pt[0], pt[1])
-    pt = geom.GetPoint(0)
-    ring.AddPoint(pt[0], pt[1])
-    poly = ogr.Geometry(ogr.wkbPolygon)
-    poly.AddGeometry(ring)
+    poly = Polygon(geom)
+
+    noseToTail = LineString((geom.coords[0], geom.coords[2]))
+    wingLength = LineString((geom.coords[1], geom.coords[3]))
+
+
 
     transform_WGS84_To_UTM, transform_UTM_To_WGS84, utm_cs = gT.createUTMTransform(geom)
-    geom.Transform(transform_WGS84_To_UTM)
-    pt0 = geom.GetPoint(0) # Tail
-    pt1 = geom.GetPoint(1) # Wing
-    pt2 = geom.GetPoint(2) # Nose
-    pt3 = geom.GetPoint(3) # Wing
-    Length = math.sqrt((pt2[0]-pt0[0])**2 + (pt2[1]-pt0[1])**2)
-    Width = math.sqrt((pt3[0] - pt1[0])**2 + (pt3[1] - pt1[1])**2)
+
+    noseToTail = shapely.ops.tranform(transform_WGS84_To_UTM, noseToTail)
+    wingLength = shapely.ops.tranform(transform_WGS84_To_UTM, wingLength)
+
+    Length = noseToTail.length
+    Width = wingLength.length
     Aspect = Length/Width
-    Direction = (math.atan2(pt2[0]-pt0[0], pt2[1]-pt0[1])*180/math.pi) % 360
-
-
-    geom.Transform(transform_UTM_To_WGS84)
+    Direction = (math.atan2(geom.coords[2][0]-geom.coords[0][0], geom.coords[2][1]-geom.coords[0][1])*180/math.pi) % 360
 
     return [poly, Length, Width, Aspect, Direction]
 
@@ -49,13 +53,13 @@ def evaluateLineStringBoat(geom, label='Boat', aspectRatio=3):
 
 
     transform_WGS84_To_UTM, transform_UTM_To_WGS84, utm_cs = gT.createUTMTransform(geom)
+    geom = shapely.ops.tranform(transform_WGS84_To_UTM, geom)
 
-    geom.Transform(transform_WGS84_To_UTM)
-    pt0 = geom.GetPoint(0) # Stern
-    pt1 = geom.GetPoint(1) # Bow
+    pt0 = geom.coords[0] # Stern
+    pt1 = geom.coords[1] # Bow
     Length = math.sqrt((pt1[0]-pt0[0])**2 + (pt1[1]-pt0[1])**2)
     Direction = (math.atan2(pt1[0]-pt0[0], pt1[1]-pt0[1])*180/math.pi) % 360
-    geom.Transform(transform_UTM_To_WGS84)
+
 
     poly, areaM, angRad, lengthM = gT.createBoxFromLine(geom, aspectRatio,
                                                               transformRequired=True,
@@ -67,178 +71,94 @@ def evaluateLineStringBoat(geom, label='Boat', aspectRatio=3):
 
     return [poly, Length, Width, Aspect, Direction]
 
+def evaluateLineStringFeature(geom, labelType='Boat', labelName='', aspectRatio=3):
 
-def convertLabelStringToPoly(shapeFileSrc, outGeoJSon, labelType='Airplane'):
+    if labelName=='':
+        labelName = labelType
+    if labelType=='Boat':
 
-        shapeSrc = ogr.Open(shapeFileSrc)
-        source_layer = shapeSrc.GetLayer()
-        source_srs = source_layer.GetSpatialRef()
+        return evaluateLineStringBoat(geom, label=labelName, aspectRatio=aspectRatio)
+
+    elif labelType=='Airplane':
+
+        return evaluateLineStringPlane(geom, label=labelName)
+
+    else: # Default treat like boat
+        return evaluateLineStringBoat(geom, label=labelName, aspectRatio=aspectRatio)
+
+
+def convertLabelStringToPoly(shapeFileSrc, outGeoJSon, labelType='Airplane', aspectRatio=3, labelName=''):
+
+        source_layer_gdf = gpd.read_file(shapeFileSrc)
         # Create the output Layer
-        outDriver = ogr.GetDriverByName("geojson")
         if os.path.exists(outGeoJSon):
-            outDriver.DeleteDataSource(outGeoJSon)
+            fiona.remove(outGeoJSon, 'GeoJSON').DeleteDataSource(outGeoJSon)
 
+        source_layer_gdf["geometry"], \
+        source_layer_gdf["Length_m"], \
+        source_layer_gdf["Width_m"], \
+        source_layer_gdf["Aspect(L/W)"], \
+        source_layer_gdf["compassDeg"] = source_layer_gdf.apply(
+            lambda x: evaluateLineStringFeature(x['geometry'],
+                                                labelType=labelType,
+                                                aspectRatio=aspectRatio,
+                                                labelName=labelName
+                                                ),
+            axis=1)
 
-        outDataSource = outDriver.CreateDataSource(outGeoJSon)
-        outLayer = outDataSource.CreateLayer("groundTruth", source_srs, geom_type=ogr.wkbPolygon)
-        # Add input Layer Fields to the output Layer
-        inLayerDefn = source_layer.GetLayerDefn()
-        for i in range(0, inLayerDefn.GetFieldCount()):
-            fieldDefn = inLayerDefn.GetFieldDefn(i)
-            outLayer.CreateField(fieldDefn)
-        outLayer.CreateField(ogr.FieldDefn("Length_m", ogr.OFTReal))
-        outLayer.CreateField(ogr.FieldDefn("Width_m", ogr.OFTReal))
-        outLayer.CreateField(ogr.FieldDefn("Aspect(L/W)", ogr.OFTReal))
-        outLayer.CreateField(ogr.FieldDefn("compassDeg", ogr.OFTReal))
-
-        outLayerDefn = outLayer.GetLayerDefn()
-        for inFeature in source_layer:
-
-            outFeature = ogr.Feature(outLayerDefn)
-
-            for i in range(0, inLayerDefn.GetFieldCount()):
-                outFeature.SetField(inLayerDefn.GetFieldDefn(i).GetNameRef(), inFeature.GetField(i))
-
-            geom = inFeature.GetGeometryRef()
-            if labelType == 'Airplane':
-                poly, Length, Width, Aspect, Direction = evaluateLineStringPlane(geom, label='Airplane')
-            elif labelType == 'Boat':
-                poly, Length, Width, Aspect, Direction = evaluateLineStringBoat(geom, label='Boat')
-
-            outFeature.SetGeometry(poly)
-            outFeature.SetField("Length_m", Length)
-            outFeature.SetField("Width_m", Width)
-            outFeature.SetField("Aspect(L/W)", Aspect)
-            outFeature.SetField("compassDeg", Direction)
-
-            outLayer.CreateFeature(outFeature)
-
-
-def createTruthPixelLinePickle(truthLineFile, pickleLocation=''):
-    if pickleLocation=='':
-        extension = os.path.splitext(truthLineFile)[1]
-        pickleLocation = truthLineFile.replace(extension, 'Pixline.p')
-    if truthLineFile != '':
-        # get Source Line File Information
-        shapef = ogr.Open(truthLineFile, 0)
-        truthLayer = shapef.GetLayer()
-        pt1X = []
-        pt1Y = []
-        pt2X = []
-        pt2Y = []
-        for tmpFeature in truthLayer:
-            tmpGeom = tmpFeature.GetGeometryRef()
-            for i in range(0, tmpGeom.GetPointCount()):
-                pt = tmpGeom.GetPoint(i)
-
-                if i == 0:
-                    pt1X.append(pt[0])
-                    pt1Y.append(pt[1])
-                elif i == 1:
-                    pt2X.append(pt[0])
-                    pt2Y.append(pt[1])
-
-        lineData = {'pt1X': np.asarray(pt1X),
-                    'pt1Y': np.asarray(pt1Y),
-                    'pt2X': np.asarray(pt2X),
-                    'pt2Y': np.asarray(pt2Y)
-                    }
-
-        with open(pickleLocation, 'wb') as f:
-            pickle.dump(lineData, f)
-            # get Source Line File Information
-
-
-def createTruthPixelPolyPickle(truthPoly, pickleLocation=''):
-    # returns dictionary with list of minX, maxX, minY, maxY
-
-    if pickleLocation=='':
-        extension = os.path.splitext(truthPoly)[1]
-        pickleLocation = truthPoly.replace(extension, 'PixPoly.p')
-    if truthPoly != '':
-        # get Source Line File Information
-        shapef = ogr.Open(truthPoly, 0)
-        truthLayer = shapef.GetLayer()
-        envList = []
-
-        for tmpFeature in truthLayer:
-            tmpGeom = tmpFeature.GetGeometryRef()
-            env = tmpGeom.GetEvnelope()
-            envList.append(env)
-
-        envArray = np.asarray(envList)
-        envelopeData = {'minX': envArray[:,0],
-                        'maxX': envArray[:,1],
-                        'minY': envArray[:,2],
-                        'maxY': envArray[:,3]
-                        }
-
-
-        with open(pickleLocation, 'wb') as f:
-            pickle.dump(envelopeData, f)
-            # get Source Line File Information
+        source_layer_gdf.to_file(outGeoJSon, driver='GeoJSON')
 
 
 def createNPPixArrayDist(rasterSrc, vectorSrc, npDistFileName='', units='pixels'):
+    #TODO evaluate scipy.ndimage.morphology.distance_transform_edt vs cv2.distanceTransform for speed
 
+    # image = features.rasterize(
+    #         ((g, 255) for g, v in shapes),
+    #         out_shape=src.shape,
+    #         transform=src.transform)
     ## open source vector file that truth data
-    source_ds = ogr.Open(vectorSrc)
-    source_layer = source_ds.GetLayer()
+    ## calculate pixelSize in meters i.e. GSD
 
-    ## extract data from src Raster File to be emulated
-    ## open raster file that is to be emulated
-    srcRas_ds = gdal.Open(rasterSrc)
-    cols = srcRas_ds.RasterXSize
-    rows = srcRas_ds.RasterYSize
-    noDataValue = 0
+    with rasterio.open(rasterSrc) as srcRas_ds:
+        src_transform = srcRas_ds.transform
+        src_shape = srcRas_ds.shape
+        ## calculate pixel size in meters i.e. GSD
+        if units == 'meters':
+            geoTrans, poly, ulX, ulY, lrX, lrY = gT.getRasterExtent(srcRas_ds)
+            transform_WGS84_To_UTM, transform_UTM_To_WGS84, utm_cs = gT.createUTMTransform(poly)
+            line = LineString([(geoTrans.c, geoTrans.f),
+                               (geoTrans.c + geoTrans.a, geoTrans.f + geoTrans.e)
+                               ]
+                              )
 
-    if units=='meters':
-        geoTrans, poly, ulX, ulY, lrX, lrY = gT.getRasterExtent(srcRas_ds)
-        transform_WGS84_To_UTM, transform_UTM_To_WGS84, utm_cs = gT.createUTMTransform(poly)
-        line = ogr.Geometry(ogr.wkbLineString)
-        line.AddPoint(geoTrans[0], geoTrans[3])
-        line.AddPoint(geoTrans[0]+geoTrans[1], geoTrans[3])
+            line = shapely.ops.tranform(transform_WGS84_To_UTM, line)
+            metersIndex = line.lenth
+        else:
+            metersIndex = 1
 
-        line.Transform(transform_WGS84_To_UTM)
-        metersIndex = line.Length()
-    else:
-        metersIndex = 1
+    ## Burn source layer into image
+    source_layer = gpd.read_file(vectorSrc)
+    shapes = ((geom,value) for geom, value in zip(source_layer.geometry, 255))
+    baseImage = features.rasterize(shapes,
+                               out_shape=src_shape,
+                               transform=src_transform)
 
-    ## create First raster memory layer
-    memdrv = gdal.GetDriverByName('MEM')
-    dst_ds = memdrv.Create('', cols, rows, 1, gdal.GDT_Byte)
-    dst_ds.SetGeoTransform(srcRas_ds.GetGeoTransform())
-    dst_ds.SetProjection(srcRas_ds.GetProjection())
-    band = dst_ds.GetRasterBand(1)
-    band.SetNoDataValue(noDataValue)
+    ## calculate Distance between Feature point and closest background pixel
+    # distance_transform_edt takes the place of ComputeProximity
 
-    gdal.RasterizeLayer(dst_ds, [1], source_layer, burn_values=[255])
-    srcBand = dst_ds.GetRasterBand(1)
+    #calculate distance from Any point inside a feature to the closest background pixel
+    interiorDist = morphology.distance_transform_edt(baseImage)
 
-    memdrv2 = gdal.GetDriverByName('MEM')
-    prox_ds = memdrv2.Create('', cols, rows, 1, gdal.GDT_Int16)
-    prox_ds.SetGeoTransform(srcRas_ds.GetGeoTransform())
-    prox_ds.SetProjection(srcRas_ds.GetProjection())
-    proxBand = prox_ds.GetRasterBand(1)
-    proxBand.SetNoDataValue(noDataValue)
+    #inverse Image so that background is a feature and interior feature values = 0
+    inverseImage = baseImage
+    inverseImage[inverseImage==0]=200
+    inverseImage[inverseImage==255]=0
 
-    options = ['NODATA=0']
+    # calculate distance from any point exterior a feature to the closet feature pixel
+    exteriorDist = morphology.distance_transform_edt(inverseImage)
 
-    gdal.ComputeProximity(srcBand, proxBand, options)
 
-    memdrv3 = gdal.GetDriverByName('MEM')
-    proxIn_ds = memdrv3.Create('', cols, rows, 1, gdal.GDT_Int16)
-    proxIn_ds.SetGeoTransform(srcRas_ds.GetGeoTransform())
-    proxIn_ds.SetProjection(srcRas_ds.GetProjection())
-    proxInBand = proxIn_ds.GetRasterBand(1)
-    proxInBand.SetNoDataValue(noDataValue)
-    options = ['NODATA=0', 'VALUES=0']
-    gdal.ComputeProximity(srcBand, proxInBand, options)
-
-    proxIn = gdalnumeric.BandReadAsArray(proxInBand)
-    proxOut = gdalnumeric.BandReadAsArray(proxBand)
-
-    proxTotal = proxIn.astype(float) - proxOut.astype(float)
+    proxTotal = interiorDist - exteriorDist
     proxTotal = proxTotal*metersIndex
 
     if npDistFileName != '':
@@ -247,30 +167,80 @@ def createNPPixArrayDist(rasterSrc, vectorSrc, npDistFileName='', units='pixels'
     return proxTotal
 
 
-def createGeoJSONFromRaster(geoJsonFileName, array2d, geom, proj,
-                            layerName="BuildingID",
-                            fieldName="BuildingID"):
+def polygonize(imageArray, transformAffineObject, maskValue=0):
 
-    memdrv = gdal.GetDriverByName('MEM')
-    src_ds = memdrv.Create('', array2d.shape[1], array2d.shape[0], 1)
-    src_ds.SetGeoTransform(geom)
-    src_ds.SetProjection(proj)
-    band = src_ds.GetRasterBand(1)
-    band.WriteArray(array2d)
+    mask = imageArray!=maskValue
 
-    dst_layername = "BuildingID"
-    drv = ogr.GetDriverByName("geojson")
-    dst_ds = drv.CreateDataSource(geoJsonFileName)
-    dst_layer = dst_ds.CreateLayer(layerName, srs=None)
+    featureGenerator = features.shapes(imageArray,
+                             transform=transformAffineObject,
+                             mask=mask)
 
-    fd = ogr.FieldDefn(fieldName, ogr.OFTInteger)
-    dst_layer.CreateField(fd)
-    dst_field = 1
+    return featureGenerator
 
-    gdal.Polygonize(band, None, dst_layer, dst_field, [], callback=None)
+def createGDFfromShapes(featureGenerator, fieldName='rasterVal'):
 
-    return
+    geomList = []
+    rasterValList = []
 
+    for feat in featureGenerator:
+        geomList.append(shape(feat[0]))
+        rasterValList.append(feat[1])
+
+    featureGDF = gpd.GeoDataFrame({'geometry': geomList, fieldName: rasterValList})
+
+    return featureGDF
+
+
+def createGeoJSONFromRaster(geoJsonFileName,
+                            imageArray,
+                            geom,
+                            crs,
+                            maskValue=0,
+                            fieldName="rasterVal"):
+
+    featureGenerator = polygonize(imageArray,
+                                  geom,
+                                  maskValue=maskValue,
+                                  fieldName=fieldName)
+
+    featureGDF = createGDFfromShapes(featureGenerator,
+                                     fieldName=fieldName)
+    featureGDF.crs = crs
+
+    gT.exporttogeojson(geoJsonFileName, featureGDF)
+
+    return featureGDF
+
+
+def createRasterFromGeoJson(srcGeoJson,
+                            srcRasterFileName,
+                            outRasterFileName,
+                            burnValue=255,
+                            burnValueField=''):
+
+    srcGDF = gpd.read_file(srcGeoJson)
+    if burnValueField == '':
+        featureList = ((geom, value) for geom, value in zip(srcGDF.geometry, burnValue))
+    else:
+        featureList = ((geom, value) for geom, value in zip(srcGDF.geometry, srcGDF[burnValueField]))
+
+    with rasterio.open(srcRasterFileName) as rst:
+        meta = rst.meta.copy()
+        meta.update(count=1)
+        meta.update(dtype='uint8')
+
+        with rasterio.open(
+                outRasterFileName, 'w',
+                **meta) as dst:
+
+
+            burned = features.rasterize(shapes=featureList,
+                                        out=rst.shape,
+                                        transform=rst.transform)
+
+            dst.write(burned, indexes=1)
+
+    return srcGDF
 
 def createCSVSummaryFile(chipSummaryList, outputFileName, rasterChipDirectory='', replaceImageID='',
                          createProposalsFile=False,
@@ -311,6 +281,7 @@ def createCSVSummaryFile(chipSummaryList, outputFileName, rasterChipDirectory=''
                     writerTotal.writerow([imageId, -1,
                                           'POLYGON EMPTY', 'POLYGON EMPTY'])
 
+    return 1
 
 def createCSVSummaryFileFromJsonList(geoJsonList, outputFileName, chipnameList=[],
                                      input='Geo',
@@ -345,12 +316,14 @@ def createCSVSummaryFileFromJsonList(geoJsonList, outputFileName, chipnameList=[
             except:
                 pass
 
+    return 1
 
 
 def createCSVSummaryFromDirectory(geoJsonDirectory, rasterFileDirectoryList,
                                   aoi_num=0,
                                   aoi_name='TEST',
-                                  outputDirectory=''):
+                                  outputDirectory='',
+                                  verbose=False):
     if outputDirectory == '':
         outputDirectory == geoJsonDirectory
     outputbaseName = "AOI_{}_{}_polygons_solution".format(aoi_num, aoi_name)
@@ -378,8 +351,9 @@ def createCSVSummaryFromDirectory(geoJsonDirectory, rasterFileDirectoryList,
         for idx, rasterFile in enumerate(rasterFileDirectoryList):
             bandName = imageId.replace('.geojson', '.tif')
             bandName = bandName.replace('Geo_', rasterFile[1]+'_')
-            print imageId
-            print os.path.join(rasterFile[0], bandName)
+            if verbose:
+                print(imageId)
+                print(os.path.join(rasterFile[0], bandName))
             chipSummaryBand = {'chipName': os.path.join(rasterFile[0], bandName),
                                 'geoVectorName': os.path.join(geoJsonDirectory, imageId),
                                 'imageId': os.path.splitext(imageId)[0]}
@@ -387,37 +361,17 @@ def createCSVSummaryFromDirectory(geoJsonDirectory, rasterFileDirectoryList,
             chipsSummaryList[idx].append(chipSummaryBand)
 
 
-    print "starting"
+    if verbose:
+        print("starting")
     for idx, rasterFile in enumerate(rasterFileDirectoryList):
         createCSVSummaryFile(chipsSummaryList[idx], os.path.join(outputDirectory,
                                                                  outputbaseName+'_'+rasterFile[1]+'.csv'),
                             replaceImageID=rasterFile[1]+'_')
 
+    if verbose:
+        print("finished")
 
-    print "finished"
-
-
-
-def createRasterFromGeoJson(srcGeoJson, srcRasterFileName, outRasterFileName):
-    NoData_value = 0
-    source_ds = ogr.Open(srcGeoJson)
-    source_layer = source_ds.GetLayer()
-
-    srcRaster = gdal.Open(srcRasterFileName)
-
-
-    # Create the destination data source
-    target_ds = gdal.GetDriverByName('GTiff').Create(outRasterFileName, srcRaster.RasterXSize, srcRaster.RasterYSize, 1, gdal.GDT_Byte)
-    target_ds.SetGeoTransform(srcRaster.GetGeoTransform())
-    target_ds.SetProjection(srcRaster.GetProjection())
-    band = target_ds.GetRasterBand(1)
-    band.SetNoDataValue(NoData_value)
-
-    # Rasterize
-    gdal.RasterizeLayer(target_ds, [1], source_layer, burn_values=[1])
-    band.FlushCache()
-
-
+    return 1
 
 
 def createAOIName(AOI_Name, AOI_Num,
@@ -433,16 +387,22 @@ def createAOIName(AOI_Name, AOI_Num,
                   createPix=False,
                   createSummaryCSVChallenge=True,
                   csvLabel='All',
-                  featureName='Buildings'):
+                  featureName='Buildings',
+                  verbose=False):
 
     srcImageryList = []
+
+    # Clip Imagery to the the AOI provided.  This is important for areas that are completely labeled.
     if clipImageryToAOI:
 
 
         for srcImagery in srcImageryListOrig:
 
-            print(srcImagery)
+            if verbose:
+                print(srcImagery)
+
             AOI_HighResMosaicName = os.path.join(outputDirectory, 'AOI_{}_{}_{}.vrt'.format(AOI_Num, AOI_Name, srcImagery[1]))
+
             if vrtMosaic:
                 AOI_HighResMosaicClipName = AOI_HighResMosaicName.replace('.vrt', 'clipped.vrt')
             else:
@@ -474,20 +434,20 @@ def createAOIName(AOI_Name, AOI_Num,
         # i.e rasterFileList = [['/path/to/3band_AOI_1.tif, '3band'],
         #                       ['/path/to/8band_AOI_1.tif, '8band']
         #                        ]
+
     chipSummaryList = gT.cutChipFromMosaic(srcImageryList, srcVectorFileList, outlineSrc=srcVectorAOIFile,
                                            outputDirectory=outputDirectory, outputPrefix='',
                                            clipSizeMX=windowSizeMeters, clipSizeMY=windowSizeMeters, clipOverlap=clipOverlap,
                                            minpartialPerc=minpartialPerc, createPix=createPix,
                                            baseName='AOI_{}_{}'.format(AOI_Num, AOI_Name),
-                                           imgIdStart=1)
+                                           imgIdStart=1,
+                                           verbose=verbose)
 
 
     outputCSVSummaryName = 'AOI_{}_{}_{}_{}_solutions.csv'.format(AOI_Num, AOI_Name, csvLabel,featureName)
     createCSVSummaryFile(chipSummaryList, outputCSVSummaryName, rasterChipDirectory='', replaceImageID='',
                          createProposalsFile=False,
                          pixPrecision=2)
-
-
 
 
 def prettify(elem):
@@ -497,9 +457,238 @@ def prettify(elem):
     reparsed = minidom.parseString(rough_string)
     return reparsed.toprettyxml(indent="  ")
 
+def pixDFToObjectLabelDict(pixGDF,
+                              bboxResize=1.0,
+                              objectType='building',
+                              objectTypeField='',
+                              objectPose='Left',
+                              objectTruncatedField='',
+                              objectDifficultyField=''):
+
+    dictList = []
+    # start object segment
+    for row in pixGDF.iterrows():
+
+        if objectTypeField=='':
+            objectType = objectType
+        else:
+            objectType = row[objectTypeField]
+
+        if objectTruncatedField=='':
+            objectTruncated = 0
+        else:
+            objectTruncated = row[objectTruncatedField]
+
+        if objectDifficultyField=='':
+            objectDifficulty = 0
+        else:
+            objectDifficulty = row[objectDifficultyField]
 
 
-def geoJsonToPASCALVOC2012(xmlFileName, geoJson, rasterImageName, im_id='',
+        # .bounds returns a tuple (minX,minY, maxX maxY)
+
+        geomBBox = box(row['geometry'].bounds)
+
+        if bboxResize != 1.0:
+            geomBBox = affinity.scale(geomBBox, xfact=bboxResize, yfact=bboxResize)
+
+        xmin, ymin, xmax, ymax = geomBBox.bounds
+
+        dictEntry = {'objectType': objectType,
+                    'pose': objectPose,
+                    'truncated': objectTruncated,
+                    'difficult': objectDifficulty,
+                    'bndbox': {'xmin': xmin,
+                               'ymin': ymin,
+                               'xmax': xmax,
+                               'ymax': ymax
+                               },
+                    'geometry': row['geometry'].wkt,
+                    }
+
+        dictList.append(dictEntry)
+
+    return dictList
+
+def geoDFtoObjectDict(geoGDF,src_meta, bboxResize=1.0,
+                      objectType='building',
+                      objectTypeField='',
+                      objectPose='Left',
+                      objectTruncatedField='',
+                      objectDifficultyField=''):
+
+
+    pixGDF = gT.geoDFtoPixDF(geoGDF, src_meta['transform'])
+
+    objectDictList = pixDFToObjectLabelDict(pixGDF,
+                           bboxResize=bboxResize,
+                           objectType=objectType,
+                           objectTypeField=objectTypeField,
+                           objectPose=objectPose,
+                           objectTruncatedField=objectTruncatedField,
+                           objectDifficultyField=objectDifficultyField)
+
+    return objectDictList
+
+def createRasterSummaryDict(rasterImageName, src_meta, datasetName='SpaceNet_V2',
+                  annotationStyle='spaceNet'):
+
+    dictImageDescription = {'folder': datasetName,
+                                           'filename': rasterImageName,
+                                           'source': {
+                                               'database': datasetName,
+                                               'annotation': annotationStyle
+                                           },
+                                           'size': {
+                                               'width': src_meta['width'],
+                                               'height': src_meta['height'],
+                                               'depth': src_meta['count']
+                                           },
+                                           'segmented': '1',
+
+                                           }
+
+
+    return dictImageDescription
+
+
+def geoDFtoDict(geoGDF, rasterImageName, src_meta, datasetName='SpaceNet_V2',
+                  annotationStyle='spaceNet',
+                  bboxResize=1.0,
+                  objectType='building',
+                  objectTypeField='',
+                  objectPose='Left',
+                  objectTruncatedField='',
+                  objectDifficultyField=''
+                  ):
+
+    imageDescriptionDict = createRasterSummaryDict(rasterImageName, src_meta, datasetName=datasetName,
+                  annotationStyle=annotationStyle)
+
+    objectDictList = geoDFtoObjectDict(geoGDF,src_meta, bboxResize=bboxResize,
+                           objectType=objectType,
+                           objectTypeField=objectTypeField,
+                           objectPose=objectPose,
+                           objectTruncatedField=objectTruncatedField,
+                           objectDifficultyField=objectDifficultyField)
+
+
+    return imageDescriptionDict, objectDictList
+
+
+
+def geoJsontoDict(geoJson, rasterImageName, datasetName='SpaceNet_V2',
+                  annotationStyle='spaceNet',
+                  bboxResize=1.0,
+                  objectType='building',
+                  objectTypeField='',
+                  objectPose='Left',
+                  objectTruncatedField='',
+                  objectDifficultyField=''
+                  ):
+
+    geoGDF = gpd.read_file(geoJson)
+    with rasterio.open(rasterImageName) as src:
+        src_meta = src.meta.copy()
+
+    return geoDFtoDict(geoGDF, rasterImageName, src_meta, datasetName=datasetName,
+                    annotationStyle=annotationStyle,
+                    bboxResize=bboxResize,
+                    objectType=objectType,
+                    objectTypeField=objectTypeField,
+                    objectPose=objectPose,
+                    objectTruncatedField=objectTruncatedField,
+                    objectDifficultyField=objectDifficultyField
+                    )
+
+
+def writePacalVocObject(objectDict, top):
+
+    childObject = SubElement(top, 'object')
+    SubElement(childObject, 'name').text = objectDict['objectType']
+    SubElement(childObject, 'pose').text = objectDict['pose']
+    SubElement(childObject, 'truncated').text = str(objectDict['truncated'])
+    SubElement(childObject, 'difficult').text = str(objectDict['difficult'])
+    # write bounding box
+    childBoundBox = SubElement(childObject, 'bndbox')
+    SubElement(childBoundBox, 'xmin').text = str(objectDict['truncated']['bndbox']['xmin'])
+    SubElement(childBoundBox, 'ymin').text = str(objectDict['truncated']['bndbox']['ymin'])
+    SubElement(childBoundBox, 'xmax').text = str(objectDict['truncated']['bndbox']['xmax'])
+    SubElement(childBoundBox, 'ymax').text = str(objectDict['truncated']['bndbox']['ymax'])
+
+    return top
+
+def writePascalVocHeader(imageDescriptionDict, top):
+    ## write header
+
+
+    childFolder = SubElement(top, 'folder')
+    childFolder.text = imageDescriptionDict['folder']
+    childFilename = SubElement(top, 'filename')
+    childFilename.text = imageDescriptionDict['filename']
+
+    # write source block
+    childSource = SubElement(top, 'source')
+    SubElement(childSource, 'database').text = imageDescriptionDict['source']['database']
+    SubElement(childSource, 'annotation').text = imageDescriptionDict['source']['annotation']
+
+    # write size block
+    childSize = SubElement(top, 'size')
+    SubElement(childSize, 'width').text = str(imageDescriptionDict['size']['width'])
+    SubElement(childSize, 'height').text = str(imageDescriptionDict['size']['height'])
+    SubElement(childSize, 'depth').text = str(imageDescriptionDict['size']['depth'])
+
+    SubElement(top, 'segmented').text = str(imageDescriptionDict['segmented'])
+
+    return top
+
+def writeToPascalVOCLabel(xmlFilename, imageDescriptionDict, objectDictList):
+
+
+
+    top = Element('annotation')
+
+    top = writePascalVocHeader(imageDescriptionDict, top)
+
+    for objectDict in objectDictList:
+        top = writePacalVocObject(objectDict, top)
+
+
+    with open(xmlFilename, 'w') as f:
+        f.write(prettify(top))
+
+
+    return xmlFilename
+
+
+def geoJsonToPASCALVOC2012Label(xmlFileName, geoJson, rasterImageName, im_id='',
+                           dataset ='SpaceNet',
+                           folder_name='spacenet',
+                           annotationStyle = 'PASCAL VOC2012',
+                           segment=True,
+                           bufferSizePix=2.5,
+                           convertTo8Bit=True,
+                           outputPixType='Byte',
+                           outputFormat='GTiff',
+                           bboxResize=1.0,
+                           objectType='building',
+                           objectTypeField=''):
+
+    imageDescriptionDict, objectDictList = geoJsontoDict(geoJson, rasterImageName, datasetName='SpaceNet_V2',
+                  annotationStyle=annotationStyle,
+                  bboxResize=bboxResize,
+                  objectType=objectType,
+                  objectTypeField=objectTypeField,
+                  objectPose='Left',
+                  objectTruncatedField='',
+                  objectDifficultyField=''
+                  )
+
+    xmlFileName = writeToPascalVOCLabel(xmlFileName, imageDescriptionDict, objectDictList)
+
+
+
+def geoJsonToPASCALVOC2012_Deprecated(xmlFileName, geoJson, rasterImageName, im_id='',
                            dataset ='SpaceNet',
                            folder_name='spacenet',
                            annotationStyle = 'PASCAL VOC2012',
@@ -720,6 +909,7 @@ def geoJsonToPASCALVOC2012(xmlFileName, geoJson, rasterImageName, im_id='',
 
 def convertPixDimensionToPercent(size, box):
     '''Input = image size: (w,h), box: [x0, x1, y0, y1]'''
+    #TODO change box to use shapely bounding box format
     dw = 1./size[0]
     dh = 1./size[1]
     xmid = (box[0] + box[1])/2.0
@@ -850,8 +1040,8 @@ def createDistanceTransform(rasterSrc, vectorSrc, npDistFileName='', units='pixe
         geoTrans, poly, ulX, ulY, lrX, lrY = gT.getRasterExtent(srcRas_ds)
         transform_WGS84_To_UTM, transform_UTM_To_WGS84, utm_cs = gT.createUTMTransform(poly)
         line = ogr.Geometry(ogr.wkbLineString)
-        line.AddPoint(geoTrans[0], geoTrans[3])
-        line.AddPoint(geoTrans[0]+geoTrans[1], geoTrans[3])
+        line.AddPoint(geoTrans.c, geoTrans.f)
+        line.AddPoint(geoTrans.c+geoTrans.a, geoTrans.f)
 
         line.Transform(transform_WGS84_To_UTM)
         metersIndex = line.Length()

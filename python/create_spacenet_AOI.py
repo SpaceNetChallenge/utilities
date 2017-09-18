@@ -7,7 +7,9 @@ if __name__ == '__main__':
 
 
     parser = argparse.ArgumentParser(description='Process SrcData for Region into small chips')
-    parser.add_argument("srcRasterList", help="csv file with path/to/raster.vrt, rasterDescripiton "
+    parser.add_argument("srcRasterList", help="csv file with a row for each raster,"
+                                              "each row will have the following format:"
+                                              "path/to/raster.vrt, rasterDescripiton "
                                               "i.e, path/to/AOI_#_Num_3band.vrt, 3band ")
     parser.add_argument("geoJsonList", help="csv file with path/to/vector_buildings.geojson, vectorDescription"
                                               "i.e, path/to/AOI_#_buildings.geojson, buildings")
@@ -55,10 +57,6 @@ if __name__ == '__main__':
     # geoJSON AOI boundary
     args = parser.parse_args()
 
-
-
-    AOI_Name = 'RIO'
-    AOI_Num = 3
     # outputDirectory Base Location
 
 
@@ -80,8 +78,9 @@ if __name__ == '__main__':
     # location of imagery
 
     srcImageryList = []
-    with open(args.srcRasterList, 'rb') as csvfile:
+    with open(args.srcRasterList, 'rt') as csvfile:
         print(args.srcRasterList)
+        # Todo insert header information into CSV
         csvreader = csv.reader(csvfile, delimiter=',')
         for row in csvreader:
             print(row)
@@ -90,10 +89,13 @@ if __name__ == '__main__':
                     srcImageryList.append([x.strip() for x in row])
 
     srcVectorFileList = []
-    with open(args.geoJsonList, 'rb') as csvfile:
+    with open(args.geoJsonList, 'rt') as csvfile:
+        # Todo insert header information into CSV
         csvreader = csv.reader(csvfile, delimiter=',')
+
         for row in csvreader:
             if row:
+                # check if line is commented
                 if not row[0].startswith("#"):
                     srcVectorFileList.append([x.strip() for x in row])
 
@@ -108,5 +110,5 @@ if __name__ == '__main__':
                      createPix=args.createPix,
                      createSummaryCSVChallenge=args.createSummaryCSV,
                      csvLabel=args.csvLabel,
-                     featurName=args.featureName
+                     featureName=args.featureName
                      )
