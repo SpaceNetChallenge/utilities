@@ -487,14 +487,14 @@ def pixDFToObjectLabelDict(pixGDF,
 
         # .bounds returns a tuple (minX,minY, maxX maxY)
 
-        geomBBox = box(row['polyPix'].bounds)
+        geomBBox = box(row['geometry'].bounds)
 
         if bboxResize != 1.0:
             geomBBox = affinity.scale(geomBBox, xfact=bboxResize, yfact=bboxResize)
 
         xmin, ymin, xmax, ymax = geomBBox.bounds
 
-        dictEntry = {'name': objectType,
+        dictEntry = {'objectType': objectType,
                     'pose': objectPose,
                     'truncated': objectTruncated,
                     'difficult': objectDifficulty,
@@ -502,7 +502,8 @@ def pixDFToObjectLabelDict(pixGDF,
                                'ymin': ymin,
                                'xmax': xmax,
                                'ymax': ymax
-                               }
+                               },
+                    'geometry': row['geometry'].wkt,
                     }
 
         dictList.append(dictEntry)
@@ -532,7 +533,7 @@ def geoDFtoObjectDict(geoGDF,src_meta, bboxResize=1.0,
 def createRasterSummaryDict(rasterImageName, src_meta, datasetName='SpaceNet_V2',
                   annotationStyle='spaceNet'):
 
-    dictImageDescription = {'annotation': {'folder': datasetName,
+    dictImageDescription = {'folder': datasetName,
                                            'filename': rasterImageName,
                                            'source': {
                                                'database': datasetName,
@@ -546,7 +547,7 @@ def createRasterSummaryDict(rasterImageName, src_meta, datasetName='SpaceNet_V2'
                                            'segmented': '1',
 
                                            }
-                            }
+
 
     return dictImageDescription
 
@@ -561,9 +562,7 @@ def geoDFtoDict(geoGDF, rasterImageName, src_meta, datasetName='SpaceNet_V2',
                   objectDifficultyField=''
                   ):
 
-
-
-    dictImageDescription = createRasterSummaryDict(rasterImageName, src_meta, datasetName=datasetName,
+    imageDescriptionDict = createRasterSummaryDict(rasterImageName, src_meta, datasetName=datasetName,
                   annotationStyle=annotationStyle)
 
     objectDictList = geoDFtoObjectDict(geoGDF,src_meta, bboxResize=bboxResize,
@@ -574,7 +573,7 @@ def geoDFtoDict(geoGDF, rasterImageName, src_meta, datasetName='SpaceNet_V2',
                            objectDifficultyField=objectDifficultyField)
 
 
-    return dictImageDescription, objectDictList
+    return imageDescriptionDict, objectDictList
 
 
 
@@ -603,7 +602,93 @@ def geoJsontoDict(geoJson, rasterImageName, datasetName='SpaceNet_V2',
                     )
 
 
-def geoJsonToPASCALVOC2012(xmlFileName, geoJson, rasterImageName, im_id='',
+def writePacalVocObject(objectDict, top):
+
+    childObject = SubElement(top, 'object')
+    SubElement(childObject, 'name').text = objectDict['objectType']
+    SubElement(childObject, 'pose').text = objectDict['pose']
+    SubElement(childObject, 'truncated').text = str(objectDict['truncated'])
+    SubElement(childObject, 'difficult').text = str(objectDict['difficult'])
+    # write bounding box
+    childBoundBox = SubElement(childObject, 'bndbox')
+    SubElement(childBoundBox, 'xmin').text = str(objectDict['truncated']['bndbox']['xmin'])
+    SubElement(childBoundBox, 'ymin').text = str(objectDict['truncated']['bndbox']['ymin'])
+    SubElement(childBoundBox, 'xmax').text = str(objectDict['truncated']['bndbox']['xmax'])
+    SubElement(childBoundBox, 'ymax').text = str(objectDict['truncated']['bndbox']['ymax'])
+
+    return top
+
+def writePascalVocHeader(imageDescriptionDict, top):
+    ## write header
+
+
+    childFolder = SubElement(top, 'folder')
+    childFolder.text = imageDescriptionDict['folder']
+    childFilename = SubElement(top, 'filename')
+    childFilename.text = imageDescriptionDict['filename']
+
+    # write source block
+    childSource = SubElement(top, 'source')
+    SubElement(childSource, 'database').text = imageDescriptionDict['source']['database']
+    SubElement(childSource, 'annotation').text = imageDescriptionDict['source']['annotation']
+
+    # write size block
+    childSize = SubElement(top, 'size')
+    SubElement(childSize, 'width').text = str(imageDescriptionDict['size']['width'])
+    SubElement(childSize, 'height').text = str(imageDescriptionDict['size']['height'])
+    SubElement(childSize, 'depth').text = str(imageDescriptionDict['size']['depth'])
+
+    SubElement(top, 'segmented').text = str(imageDescriptionDict['segmented'])
+
+    return top
+
+def writeToPascalVOCLabel(xmlFilename, imageDescriptionDict, objectDictList):
+
+
+
+    top = Element('annotation')
+
+    top = writePascalVocHeader(imageDescriptionDict, top)
+
+    for objectDict in objectDictList:
+        top = writePacalVocObject(objectDict, top)
+
+
+    with open(xmlFilename, 'w') as f:
+        f.write(prettify(top))
+
+
+    return xmlFilename
+
+
+def geoJsonToPASCALVOC2012Label(xmlFileName, geoJson, rasterImageName, im_id='',
+                           dataset ='SpaceNet',
+                           folder_name='spacenet',
+                           annotationStyle = 'PASCAL VOC2012',
+                           segment=True,
+                           bufferSizePix=2.5,
+                           convertTo8Bit=True,
+                           outputPixType='Byte',
+                           outputFormat='GTiff',
+                           bboxResize=1.0,
+                           objectType='building',
+                           objectTypeField=''):
+
+    imageDescriptionDict, objectDictList = geoJsontoDict(geoJson, rasterImageName, datasetName='SpaceNet_V2',
+                  annotationStyle=annotationStyle,
+                  bboxResize=bboxResize,
+                  objectType=objectType,
+                  objectTypeField=objectTypeField,
+                  objectPose='Left',
+                  objectTruncatedField='',
+                  objectDifficultyField=''
+                  )
+
+    xmlFileName = writeToPascalVOCLabel(xmlFileName, imageDescriptionDict, objectDictList)
+
+
+
+def geoJsonToPASCALVOC2012_Deprecated(xmlFileName, geoJson, rasterImageName, im_id='',
                            dataset ='SpaceNet',
                            folder_name='spacenet',
                            annotationStyle = 'PASCAL VOC2012',
