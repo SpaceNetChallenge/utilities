@@ -241,7 +241,7 @@ def combineGeoJsonAndConvertToWGS84(baseName, rasterLocationList,
                                     removeGeoJsonAfter=True):
     srcBaseName = os.path.splitext(baseName)[0]
     geoJsonList = glob.glob(srcBaseName+"_*.geojson")
-    print geoJsonList
+    print(geoJsonList)
 
     rasterList = []
     for rasterLocation in rasterLocationList:
