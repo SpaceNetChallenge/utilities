@@ -2,18 +2,8 @@ import numpy as np
 import os
 from spaceNetUtilities import geoTools as gT
 import math
-import pickle
 import csv
 import glob
-from PIL import Image
-from xml.etree.ElementTree import Element, SubElement, Comment, tostring
-from xml.etree import ElementTree
-from xml.dom import minidom
-import subprocess
-import scipy.io
-from scipy.sparse import csr_matrix
-import json
-import re
 import shapely
 import fiona
 import geopandas as gpd
@@ -21,12 +11,10 @@ import rasterio
 from scipy.ndimage import morphology
 from rasterio import features
 from shapely.geometry.polygon import Polygon
-from shapely.geometry.multipolygon import MultiPolygon
 from shapely.geometry.linestring import LineString
-from shapely.geometry.multilinestring import MultiLineString
 from shapely.geometry import shape, box
 from shapely import affinity
-from osgeo import gdal, osr, ogr, gdalnumeric
+
 
 def evaluateLineStringPlane(geom, label='Airplane'):
 
@@ -563,105 +551,7 @@ def convertPixDimensionToPercent(size, box):
 
     return (x,y,w,h)
 
-def geoJsonToDARKNET(xmlFileName, geoJson, rasterImageName, im_id='',
-                     dataset ='SpaceNet',
-                     folder_name='spacenet',
-                     annotationStyle = 'DARKNET',
-                     segment=True,
-                     bufferSizePix=2.5,
-                     convertTo8Bit=True,
-                     outputPixType='Byte',
-                     outputFormat='GTiff',
-                     bboxResize=1.0):
-    xmlFileName = xmlFileName.replace(".xml", ".txt")
-    print("creating {}".format(xmlFileName))
 
-    buildingList = gT.convert_wgs84geojson_to_pixgeojson(geoJson, rasterImageName, image_id=[], pixelgeojson=[], only_polygons=True,
-                                       breakMultiPolygonGeo=True, pixPrecision=2)
-    #                        buildinglist.append({'ImageId': image_id,
-                                             #'BuildingId': building_id,
-                                             #'polyGeo': ogr.CreateGeometryFromWkt(geom.ExportToWkt()),
-                                             #'polyPix': ogr.CreateGeometryFromWkt('POLYGON EMPTY')
-                                             #})
-
-
-    srcRaster = gdal.Open(rasterImageName)
-    outputRaster = rasterImageName
-    if convertTo8Bit:
-        cmd = ['gdal_translate', '-ot', outputPixType, '-of', outputFormat, '-co', 'PHOTOMETRIC=rgb']
-        scaleList = []
-        for bandId in range(srcRaster.RasterCount):
-            bandId = bandId+1
-            band=srcRaster.GetRasterBand(bandId)
-            min = band.GetMinimum()
-            max = band.GetMaximum()
-
-            # if not exist minimum and maximum values
-            if min is None or max is None:
-                (min, max) = band.ComputeRasterMinMax(1)
-            cmd.append('-scale_{}'.format(bandId))
-            cmd.append('{}'.format(0))
-            cmd.append('{}'.format(max))
-            cmd.append('{}'.format(0))
-            cmd.append('{}'.format(255))
-
-        cmd.append(rasterImageName)
-        if outputFormat == 'JPEG':
-            outputRaster = xmlFileName.replace('.txt', '.jpg')
-        else:
-            outputRaster = xmlFileName.replace('.txt', '.tif')
-
-        outputRaster = outputRaster.replace('_img', '_8bit_img')
-        cmd.append(outputRaster)
-        print(cmd)
-        subprocess.call(cmd)
-
-    with open(xmlFileName, 'w') as f:
-
-        for building in buildingList:
-
-
-            # Get Envelope returns a tuple (minX, maxX, minY, maxY)
-
-            boxDim = building['polyPix'].GetEnvelope()
-
-            if bboxResize != 1.0:
-                xmin = boxDim[0]
-                ymin = boxDim[2]
-                xmax = boxDim[1]
-                ymax = boxDim[3]
-                xCenter = (xmin + xmax) / 2
-                yCenter = (ymin + ymax) / 2
-                bboxNewHalfHeight = ((ymax - ymin) / 2) * bboxResize
-                bboxNewHalfWidth = ((ymax - ymin) / 2) * bboxResize
-                xmin = xCenter - bboxNewHalfWidth
-                xmax = xCenter + bboxNewHalfWidth
-                ymin = yCenter - bboxNewHalfHeight
-                ymax = yCenter + bboxNewHalfHeight
-
-                boxDim = [xmin, xmax, ymin, ymax]
-
-            rasterSize = (srcRaster.RasterXSize, srcRaster.RasterYSize)
-
-            lineOutput = convertPixDimensionToPercent(rasterSize, boxDim)
-            classNum=0
-            f.write('{} {} {} {} {}\n'.format(classNum,
-                                             lineOutput[0],
-                                             lineOutput[1],
-                                             lineOutput[2],
-                                             lineOutput[3])
-                    )
-
-    entry = {'rasterFileName': outputRaster,
-             'geoJsonFileName': geoJson,
-             'annotationName': xmlFileName,
-             'width': srcRaster.RasterXSize,
-             'height': srcRaster.RasterYSize,
-             'depth' : srcRaster.RasterCount,
-             'basename': os.path.splitext(os.path.basename(rasterImageName))[0]
-             }
-
-    return entry
 
 def createDistanceTransform(rasterSrc, vectorSrc, npDistFileName='', units='pixels'):
 
