@@ -24,7 +24,8 @@ from shapely.geometry.polygon import Polygon
 from shapely.geometry.multipolygon import MultiPolygon
 from shapely.geometry.linestring import LineString
 from shapely.geometry.multilinestring import MultiLineString
-from shapely.geometry import shape
+from shapely.geometry import shape, box
+from shapely import affinity
 from osgeo import gdal, osr, ogr, gdalnumeric
 
 def evaluateLineStringPlane(geom, label='Airplane'):
@@ -456,6 +457,150 @@ def prettify(elem):
     reparsed = minidom.parseString(rough_string)
     return reparsed.toprettyxml(indent="  ")
 
+def pixDFToObjectLabelDict(pixGDF,
+                              bboxResize=1.0,
+                              objectType='building',
+                              objectTypeField='',
+                              objectPose='Left',
+                              objectTruncatedField='',
+                              objectDifficultyField=''):
+
+    dictList = []
+    # start object segment
+    for row in pixGDF.iterrows():
+
+        if objectTypeField=='':
+            objectType = objectType
+        else:
+            objectType = row[objectTypeField]
+
+        if objectTruncatedField=='':
+            objectTruncated = 0
+        else:
+            objectTruncated = row[objectTruncatedField]
+
+        if objectDifficultyField=='':
+            objectDifficulty = 0
+        else:
+            objectDifficulty = row[objectDifficultyField]
+
+
+        # .bounds returns a tuple (minX,minY, maxX maxY)
+
+        geomBBox = box(row['polyPix'].bounds)
+
+        if bboxResize != 1.0:
+            geomBBox = affinity.scale(geomBBox, xfact=bboxResize, yfact=bboxResize)
+
+        xmin, ymin, xmax, ymax = geomBBox.bounds
+
+        dictEntry = {'name': objectType,
+                    'pose': objectPose,
+                    'truncated': objectTruncated,
+                    'difficult': objectDifficulty,
+                    'bndbox': {'xmin': xmin,
+                               'ymin': ymin,
+                               'xmax': xmax,
+                               'ymax': ymax
+                               }
+                    }
+
+        dictList.append(dictEntry)
+
+    return dictList
+
+def geoDFtoObjectDict(geoGDF,src_meta, bboxResize=1.0,
+                      objectType='building',
+                      objectTypeField='',
+                      objectPose='Left',
+                      objectTruncatedField='',
+                      objectDifficultyField=''):
+
+
+    pixGDF = gT.geoDFtoPixDF(geoGDF, src_meta['transform'])
+
+    objectDictList = pixDFToObjectLabelDict(pixGDF,
+                           bboxResize=bboxResize,
+                           objectType=objectType,
+                           objectTypeField=objectTypeField,
+                           objectPose=objectPose,
+                           objectTruncatedField=objectTruncatedField,
+                           objectDifficultyField=objectDifficultyField)
+
+    return objectDictList
+
+def createRasterSummaryDict(rasterImageName, src_meta, datasetName='SpaceNet_V2',
+                  annotationStyle='spaceNet'):
+
+    dictImageDescription = {'annotation': {'folder': datasetName,
+                                           'filename': rasterImageName,
+                                           'source': {
+                                               'database': datasetName,
+                                               'annotation': annotationStyle
+                                           },
+                                           'size': {
+                                               'width': src_meta['width'],
+                                               'height': src_meta['height'],
+                                               'depth': src_meta['count']
+                                           },
+                                           'segmented': '1',
+
+                                           }
+                            }
+
+    return dictImageDescription
+
+
+def geoDFtoDict(geoGDF, rasterImageName, src_meta, datasetName='SpaceNet_V2',
+                  annotationStyle='spaceNet',
+                  bboxResize=1.0,
+                  objectType='building',
+                  objectTypeField='',
+                  objectPose='Left',
+                  objectTruncatedField='',
+                  objectDifficultyField=''
+                  ):
+
+
+
+    dictImageDescription = createRasterSummaryDict(rasterImageName, src_meta, datasetName=datasetName,
+                  annotationStyle=annotationStyle)
+
+    objectDictList = geoDFtoObjectDict(geoGDF,src_meta, bboxResize=bboxResize,
+                           objectType=objectType,
+                           objectTypeField=objectTypeField,
+                           objectPose=objectPose,
+                           objectTruncatedField=objectTruncatedField,
+                           objectDifficultyField=objectDifficultyField)
+
+
+    return dictImageDescription, objectDictList
+
+
+
+def geoJsontoDict(geoJson, rasterImageName, datasetName='SpaceNet_V2',
+                  annotationStyle='spaceNet',
+                  bboxResize=1.0,
+                  objectType='building',
+                  objectTypeField='',
+                  objectPose='Left',
+                  objectTruncatedField='',
+                  objectDifficultyField=''
+                  ):
+
+    geoGDF = gpd.read_file(geoJson)
+    with rasterio.open(rasterImageName) as src:
+        src_meta = src.meta.copy()
+
+    return geoDFtoDict(geoGDF, rasterImageName, src_meta, datasetName=datasetName,
+                    annotationStyle=annotationStyle,
+                    bboxResize=bboxResize,
+                    objectType=objectType,
+                    objectTypeField=objectTypeField,
+                    objectPose=objectPose,
+                    objectTruncatedField=objectTruncatedField,
+                    objectDifficultyField=objectDifficultyField
+                    )
 
 
 def geoJsonToPASCALVOC2012(xmlFileName, geoJson, rasterImageName, im_id='',
@@ -679,6 +824,7 @@ def geoJsonToPASCALVOC2012(xmlFileName, geoJson, rasterImageName, im_id='',
 
 def convertPixDimensionToPercent(size, box):
     '''Input = image size: (w,h), box: [x0, x1, y0, y1]'''
+    #TODO change box to use shapely bounding box format
     dw = 1./size[0]
     dh = 1./size[1]
     xmid = (box[0] + box[1])/2.0
