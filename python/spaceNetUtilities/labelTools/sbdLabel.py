@@ -1,34 +1,16 @@
 import numpy as np
 import os
 from spaceNetUtilities.labelTools import coreLabelTools as clT
-import math
-import pickle
-import csv
-import glob
-from PIL import Image
-from xml.etree.ElementTree import Element, SubElement, Comment, tostring
-from xml.etree import ElementTree
-from xml.dom import minidom
-import subprocess
 import scipy.io
 from scipy.sparse import csr_matrix
 import json
-import re
-import shapely
-import fiona
-import geopandas as gpd
-import rasterio
-from scipy.ndimage import morphology
-from rasterio import features
-from shapely.geometry.polygon import Polygon
-from shapely.geometry.multipolygon import MultiPolygon
-from shapely.geometry.linestring import LineString
-from shapely.geometry.multilinestring import MultiLineString
-from shapely.geometry import shape, box
-from shapely import affinity
 from osgeo import gdal, osr, ogr, gdalnumeric
 
+
+#TODO reimplemtation using rasterio.  Simple changed needed to BurnLayer Function see coreLabelImplementation
 def createClassSegmentation(rasterSrc, vectorSrc, npDistFileName='', units='pixels'):
+
+
     dist_trans = clT.createDistanceTransform(rasterSrc, vectorSrc, npDistFileName='', units='pixels')
     dist_trans[dist_trans > 0] = 1
     dist_trans[dist_trans < 0] = 0
