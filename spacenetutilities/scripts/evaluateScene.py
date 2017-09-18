@@ -1,5 +1,5 @@
-from spaceNetUtilities import evalTools as eT
-from spaceNetUtilities import geoTools as gT
+from spacenetutilities import evalTools as eT
+from spacenetutilities import geoTools as gT
 import numpy as np
 import csv
 import multiprocessing

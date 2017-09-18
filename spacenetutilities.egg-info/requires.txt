@@ -1,0 +1,10 @@
+cython
+geopandas
+numpy
+rtree
+scipy
+osmnx
+centerline
+affine
+tqdm
+rasterio

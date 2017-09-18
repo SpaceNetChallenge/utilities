@@ -1,4 +1,4 @@
-from spaceNetUtilities import labelTools as lT
+from spacenetutilities import labeltools as lT
 import argparse
 import os
 import csv

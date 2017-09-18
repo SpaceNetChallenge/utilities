@@ -3,10 +3,10 @@ import glob
 import os
 import random
 
-# from spaceNetUtilities.labelTools import sbdLabel
-from spaceNetUtilities import geoTools as gT
-from spaceNetUtilities.labelTools import darkNetLabel
-from spaceNetUtilities.labelTools import pascalVOCLabel
+# from spacenetutilities.labeltools import sbdLabel
+from spacenetutilities import geoTools as gT
+from spacenetutilities.labeltools import darkNetLabel
+from spacenetutilities.labeltools import pascalVOCLabel
 
 
 def processRasterChip(rasterImage, rasterDescription, geojson, geojsonDescription, outputDirectory='',
