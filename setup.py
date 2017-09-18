@@ -20,7 +20,8 @@ This is version 3.0 and has been updated with more capabilities to allow for com
 #    INSTALL_REQUIRES = []
 #else:
 
-INSTALL_REQUIRES = ['cython','geopandas', 'numpy', 'rtree', 'scipy', 'osmnx', 'centerline', 'affine', 'tqdm', 'rasterio']
+INSTALL_REQUIRES = ['cython','geopandas', 'numpy', 'rtree', 'scipy', 'osmnx', 'centerline', 'affine', 'tqdm', 'rasterio',
+                    'pillow']
 
 # get all data dirs in the datasets module
 data_files = []

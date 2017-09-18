@@ -7,7 +7,7 @@ fiona
 geopandas
 rasterio
 scipy
-PIL
+pillow
 tqdm
 affine
 pyproj
