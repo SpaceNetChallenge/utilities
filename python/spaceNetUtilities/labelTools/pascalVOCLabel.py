@@ -1,5 +1,4 @@
 import os
-from spaceNetUtilities.labelTools import coreLabelTools as clT
 from PIL import Image
 from xml.etree.ElementTree import Element, SubElement
 from xml.etree import ElementTree
@@ -7,6 +6,7 @@ from xml.dom import minidom
 import geopandas as gpd
 import rasterio
 from rasterio import features
+from spaceNetUtilities.labelTools import coreLabelTools as clT
 
 def prettify(elem):
     """Return a pretty-printed XML string for the Element.

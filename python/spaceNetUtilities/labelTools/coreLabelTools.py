@@ -1,6 +1,5 @@
 import numpy as np
 import os
-from spaceNetUtilities import geoTools as gT
 import math
 import csv
 import glob
@@ -14,7 +13,7 @@ from shapely.geometry.polygon import Polygon
 from shapely.geometry.linestring import LineString
 from shapely.geometry import shape, box
 from shapely import affinity
-
+from spaceNetUtilities import geoTools as gT
 
 def evaluateLineStringPlane(geom, label='Airplane'):
 
