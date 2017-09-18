@@ -981,4 +981,44 @@ def geoJsonToSBD(annotationName_cls, annotationName_inst, geoJson, rasterSource)
              }
 
     return entry
+def convertGTiffTo8Bit(rasterImageName, outputImageName, outputFormat='GTiff',
+                       minPercent=2,
+                       maxPercent=98,
+                       maxValue=255):
 
+    # Other Format would be JPG
+
+
+    with rasterio.open(rasterImageName) as src:
+        data = src.read()
+        profile = src.profile
+
+    # resize band
+    for bandId in range(profile['count']):
+         # data[bandId,:,:]
+        minBand = np.percentile(data[bandId,:,:], minPercent)
+        maxBand = np.percentile(data[bandId,:,:], maxPercent)
+
+        # Clip lower percent of values to Zero
+        data[bandId, :, :] = data[bandId,:,:] - minBand
+        data[bandId, :, :][data[bandId,:,:]<=0] = 0
+
+        #Normalize band to between 0 and 1 saturating values above the maxPercent
+        data[bandId, :, :] = data[bandId,:,:]/(maxBand-minBand)
+        data[bandId, :, :][data[bandId,:,:]>1]=1
+
+        # Rescale to max Value (255)
+        data[bandId, :, :] = data[bandId,:,:]*maxValue
+        data[bandId, :, :][data[bandId,:,:]>maxValue]=maxValue
+
+
+
+    profile.update(dtype=rasterio.uint8,
+                   driver=outputFormat)
+
+
+    with rasterio.open(outputImageName, 'w', **profile) as dst:
+        dst.write(data.astype(rasterio.uint8))
+
+
+    return outputImageName
