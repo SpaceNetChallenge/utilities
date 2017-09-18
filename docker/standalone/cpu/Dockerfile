@@ -58,10 +58,12 @@ WORKDIR $GIT_BASE
 # Download spaceNetUtilities
 # FIXME: use ARG instead of ENV once DockerHub supports this
 
-RUN git clone --depth 1 https://github.com/SpaceNetChallenge/utilities.git
+RUN git clone --depth 1 -b spacenetV3 https://github.com/SpaceNetChallenge/utilities.git
+RUN pip install -e /opt/utilities/
 
-ENV PYUTILS_ROOT $GIT_BASE/utilities/python
-ENV PYTHONPATH $PYUTILS_ROOT:$PYTHONPATH
+
+#ENV PYUTILS_ROOT $GIT_BASE/utilities/python
+#ENV PYTHONPATH $PYUTILS_ROOT:$PYTHONPATH
 
 WORKDIR /workspace
 

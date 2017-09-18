@@ -5,7 +5,7 @@ rtree
 shapely
 fiona
 geopandas
-rasterio
+rasterio>=1.0a9
 scipy
 pillow
 tqdm

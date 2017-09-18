@@ -9,6 +9,29 @@ This is version 3.0 and has been updated with more capabilities to allow for com
 Further download instructions for the [SpaceNet Dataset](https://github.com/SpaceNetChallenge/utilities/tree/master/content/download_instructions) can be found [here](https://github.com/SpaceNetChallenge/utilities/tree/master/content/download_instructions)
 
 
+## Installation Instructions
+Several packages require binaries to be installed before pip installing the other packages
+
+* Install GDAL binaries and scripts 
+```commandline
+sudo apt-get install gdal-bin
+```
+* Install [Rtree](http://toblerity.org/rtree/install.html) 
+```commandline 
+apt-get install libspatial 
+```
+
+* Install [pyproj](https://pypi.python.org/pypi/pyproj)
+
+* Install the rest of the requirements through the requirements.txt file
+```commandline
+pip install -r requirements.txt
+```
+
+
+
+
+
 ## Evaluation Metric
 The evaluation metric for this competition is an F1 score with the matching algorithm inspired by Algorithm 2 in the [ILSVRC paper applied to the detection of building footprints](https://arxiv.org/pdf/1409.0575v3.pdf). For each building there is a geospatially defined polygon label to represent the footprint of the building. A SpaceNet entry will generate polygons to represent proposed building footprints.  Each proposed building footprint is either a “true positive” or a “false positive”.
 
