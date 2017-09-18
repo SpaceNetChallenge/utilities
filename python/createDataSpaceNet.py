@@ -1,7 +1,10 @@
 import os
 import glob
 import random
-from spaceNetUtilities import labelTools as lT
+from spaceNetUtilities.labelTools import darkNetLabel
+from spaceNetUtilities.labelTools import pascalVOCLabel
+#from spaceNetUtilities.labelTools import sbdLabel
+
 from spaceNetUtilities import geoTools as gT
 import argparse
 
@@ -73,7 +76,7 @@ def processChipSummaryList(chipSummaryList, outputDirectory='', annotationType='
 
 
         if annotationType=='PASCALVOC2012':
-            entry = lT.geoJsonToPASCALVOC2012(annotationName, chipSummary['geoVectorName'], chipSummary['rasterSource'],
+            entry = pascalVOCLabel.geoJsonToPASCALVOC2012(annotationName, chipSummary['geoVectorName'], chipSummary['rasterSource'],
                                               dataset='spacenetV2',
                                               folder_name='spacenetV2',
                                               annotationStyle=annotationType,
@@ -85,7 +88,7 @@ def processChipSummaryList(chipSummaryList, outputDirectory='', annotationType='
                                               bboxResize=bboxResize
                                               )
         elif annotationType=='DARKNET':
-            entry = lT.geoJsonToDARKNET(annotationName, chipSummary['geoVectorName'], chipSummary['rasterSource'],
+            entry = darkNetLabel.geoJsonToDARKNET(annotationName, chipSummary['geoVectorName'], chipSummary['rasterSource'],
                                         dataset='spacenetV2',
                                         folder_name='spacenetV2',
                                         annotationStyle=annotationType,
@@ -95,19 +98,20 @@ def processChipSummaryList(chipSummaryList, outputDirectory='', annotationType='
                                         bboxResize=bboxResize
                                         )
 
-        elif annotationType=='SBD':
-            basename = os.path.basename(chipSummary['rasterSource'])
-            annotationName = basename.replace('.tif', '.mat')
-            annotationName_cls = os.path.join(outputDirectory,'cls', annotationName)
-            annotationName_inst = os.path.join(outputDirectory,'inst', annotationName)
-
-            #Check to make sure output directories exist, if not make it.
-            if not os.path.exists(os.path.join(outputDirectory,'cls')):
-              os.makedirs(os.path.join(outputDirectory,'cls'))
-            if not os.path.exists(os.path.join(outputDirectory,'inst')):
-              os.makedirs(os.path.join(outputDirectory,'inst'))
-            
-            entry = lT.geoJsonToSBD(annotationName_cls, annotationName_inst, chipSummary['geoVectorName'], chipSummary['rasterSource'])
+        # elif annotationType=='SBD':
+        # TODO implement SBD in new framework
+        #     basename = os.path.basename(chipSummary['rasterSource'])
+        #     annotationName = basename.replace('.tif', '.mat')
+        #     annotationName_cls = os.path.join(outputDirectory,'cls', annotationName)
+        #     annotationName_inst = os.path.join(outputDirectory,'inst', annotationName)
+        #
+        #     #Check to make sure output directories exist, if not make it.
+        #     if not os.path.exists(os.path.join(outputDirectory,'cls')):
+        #       os.makedirs(os.path.join(outputDirectory,'cls'))
+        #     if not os.path.exists(os.path.join(outputDirectory,'inst')):
+        #       os.makedirs(os.path.join(outputDirectory,'inst'))
+        #
+        #     entry = lT.geoJsonToSBD(annotationName_cls, annotationName_inst, chipSummary['geoVectorName'], chipSummary['rasterSource'])
 
         else:
 
