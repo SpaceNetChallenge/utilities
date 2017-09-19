@@ -23,6 +23,20 @@ apt-get install libspatial
 
 * Install [pyproj](https://pypi.python.org/pypi/pyproj)
 
+* Pip Install from github 
+```commandline
+    git clone -b spacenetV3 https://github.com/SpaceNetChallenge/utilities.git@spacenetV3
+    cd utilities
+    pip install -e .
+    
+```
+
+or 
+```commandline
+    pip install --upgrade git+https://github.com/SpaceNetChallenge/utilities.git@spacenetV3
+```
+git clone -b spacenetV3 https://github.com/SpaceNetChallenge/utilities.git
+* 
 * Install the rest of the requirements through the requirements.txt file
 ```commandline
 pip install -r requirements.txt
