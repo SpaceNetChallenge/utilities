@@ -5,7 +5,7 @@ import os
 
 
 
-def removeIdFieldFromJsonEntries(geoJson, geoJsonNew):
+def removeIdFieldFromJsonEntries(geoJson, geoJsonNew, featureKeyListToRemove=['Id', 'id'], featureItemsToAdd={}):
     with open(geoJson) as json_data:
         d = json.load(json_data)
 
@@ -14,12 +14,11 @@ def removeIdFieldFromJsonEntries(geoJson, geoJsonNew):
     newFeatureList = []
     for feature in featureList:
         tmpFeature = dict(feature)
-        if 'Id' in tmpFeature['properties']:
-            del tmpFeature['properties']['Id']
+        for featureKey in featureKeyListToRemove:
+            if featureKey in tmpFeature['properties']:
+                del tmpFeature['properties'][featureKey]
 
-        if 'id' in tmpFeature['properties']:
-            del tmpFeature['properties']['id']
-
+        tmpFeature.update(featureItemsToAdd)
         newFeatureList.append(tmpFeature)
 
     d['features']=newFeatureList
@@ -36,6 +35,8 @@ def removeIdinGeoJSONFolder(folder, modifier='noid'):
         removeIdFieldFromJsonEntries(geojsonName, geojsonName.replace('.geojson', '{}.geojson'.format(modifier)))
 
 
+
+
 if __name__ == '__main__':
 
 
@@ -46,6 +47,9 @@ if __name__ == '__main__':
 
     for folder in folderList:
         removeIdinGeoJSONFolder(folder)
+
+
+
 
 
 
