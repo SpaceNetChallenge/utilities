@@ -5,6 +5,7 @@ import csv
 import glob
 import shapely
 import fiona
+import json
 import geopandas as gpd
 import rasterio
 from scipy.ndimage import morphology
@@ -655,3 +656,36 @@ def convertGTiffTo8Bit(rasterImageName, outputImageName, outputFormat='GTiff',
 
 
     return outputImageName
+
+
+def removeIdFieldFromJsonEntries(geoJson, geoJsonNew, featureKeyListToRemove=['Id', 'id'], featureItemsToAdd={}):
+    with open(geoJson) as json_data:
+        d = json.load(json_data)
+
+
+    featureList = d['features']
+    newFeatureList = []
+    for feature in featureList:
+        tmpFeature = dict(feature)
+        for featureKey in featureKeyListToRemove:
+            if featureKey in tmpFeature['properties']:
+                del tmpFeature['properties'][featureKey]
+
+        tmpFeature.update(featureItemsToAdd)
+        newFeatureList.append(tmpFeature)
+
+    d['features']=newFeatureList
+
+    if os.path.exists(geoJsonNew):
+        os.remove(geoJsonNew)
+    with open(geoJsonNew, 'w') as json_data:
+        json.dump(d, json_data)
+
+
+def removeIdinGeoJSONFolder(folder, modifier='noid'):
+
+    geoJsonList = glob.glob(os.path.join(folder, '*.geojson'))
+
+    for geojsonName in geoJsonList:
+        removeIdFieldFromJsonEntries(geojsonName, geojsonName.replace('.geojson', '{}.geojson'.format(modifier)))
+

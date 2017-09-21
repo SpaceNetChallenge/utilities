@@ -1,43 +1,7 @@
-import json
-import glob
 import geopandas as gpd
 import os
 import pandas as pd
-
-
-
-
-def removeIdFieldFromJsonEntries(geoJson, geoJsonNew, featureKeyListToRemove=['Id', 'id'], featureItemsToAdd={}):
-    with open(geoJson) as json_data:
-        d = json.load(json_data)
-
-
-    featureList = d['features']
-    newFeatureList = []
-    for feature in featureList:
-        tmpFeature = dict(feature)
-        for featureKey in featureKeyListToRemove:
-            if featureKey in tmpFeature['properties']:
-                del tmpFeature['properties'][featureKey]
-
-        tmpFeature.update(featureItemsToAdd)
-        newFeatureList.append(tmpFeature)
-
-    d['features']=newFeatureList
-
-    with open(geoJsonNew, 'w') as json_data:
-        json.dump(d, json_data)
-
-
-def removeIdinGeoJSONFolder(folder, modifier='noid'):
-
-    geoJsonList = glob.glob(os.path.join(folder, '*.geojson'))
-
-    for geojsonName in geoJsonList:
-        removeIdFieldFromJsonEntries(geojsonName, geojsonName.replace('.geojson', '{}.geojson'.format(modifier)))
-
-
-
+from spacenetutilities.labeltools import coreLabelTools
 
 if __name__ == '__main__':
 
@@ -72,7 +36,7 @@ if __name__ == '__main__':
     if removeId:
         for AOI_DICT in AOI_List:
             folder = os.path.join(baseLocation, AOI_DICT['AOI_Name'], buildingLocation)
-            removeIdinGeoJSONFolder(folder)
+            coreLabelTools.removeIdinGeoJSONFolder(folder)
 
 
 
