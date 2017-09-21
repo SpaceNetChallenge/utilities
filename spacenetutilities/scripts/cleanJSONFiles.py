@@ -105,11 +105,6 @@ if __name__ == '__main__':
 
 
 
-    #totalGDF.to_file
-
-
-
-
 
 
 
