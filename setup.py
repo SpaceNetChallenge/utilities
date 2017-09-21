@@ -26,12 +26,12 @@ INSTALL_REQUIRES = ['geopandas', 'numpy', 'rtree', 'scipy', 'osmnx', 'centerline
 # get all data dirs in the datasets module
 data_files = []
 
-#for item in os.listdir("geopandas/datasets"):
-#    if not item.startswith('__'):
-#        if os.path.isdir(os.path.join("geopandas/datasets/", item)):
-#            data_files.append(os.path.join("datasets", item, '*'))
-#        elif item.endswith('.zip'):
-#            data_files.append(os.path.join("datasets", item))
+for item in os.listdir("spacenetutilities/datasets"):
+    if not item.startswith('__'):
+        if os.path.isdir(os.path.join("spacenetutilities/datasets/", item)):
+            data_files.append(os.path.join("datasets", item, '*'))
+        elif item.endswith('.zip'):
+            data_files.append(os.path.join("datasets", item))
 
 
 setup(name='spacenetutilities',
@@ -45,8 +45,9 @@ setup(name='spacenetutilities',
       packages=['spacenetutilities',
                 'spacenetutilities.labeltools',
                 'spacenetutilities.scripts',
+                'spacenetutilities.datasets'
                 ],
-      package_data={'geopandas': data_files},
+      package_data={'spacenetutilities': data_files},
       install_requires=INSTALL_REQUIRES
       )
       #cmdclass=versioneer.get_cmdclass())
