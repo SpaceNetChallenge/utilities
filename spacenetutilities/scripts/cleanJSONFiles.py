@@ -6,6 +6,7 @@ import pandas as pd
 
 
 
+
 def removeIdFieldFromJsonEntries(geoJson, geoJsonNew, featureKeyListToRemove=['Id', 'id'], featureItemsToAdd={}):
     with open(geoJson) as json_data:
         d = json.load(json_data)
@@ -39,6 +40,7 @@ def removeIdinGeoJSONFolder(folder, modifier='noid'):
 
 
 if __name__ == '__main__':
+
 
     fillOpacity=0.3
     AOI_List = [
@@ -98,17 +100,6 @@ if __name__ == '__main__':
 
 
     totalGDF.to_file(os.path.join(baseLocation, 'SpaceNetSummaryTindex.geojson'), driver='GeoJSON')
-
-
-
-
-
-
-
-
-
-
-
 
 
 
