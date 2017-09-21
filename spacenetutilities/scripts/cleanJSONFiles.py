@@ -85,7 +85,7 @@ if __name__ == '__main__':
         srcGDF['AWSLocation'] = [os.path.join(spaceNetAWSLocation, x) for x in srcGDF['location']]
         srcGDF['fill-opacity']=fillOpacity
         srcGDF['fill']=AOI_DICT['aoi_color']
-        srcGDF.to_file(srcGeoJson.replace('.geojson', 'ex.geojson'))
+        srcGDF.to_file(srcGeoJson.replace('.geojson', 'ex.geojson'), driver='GeoJSON')
         #TODO finish merge of geoDataFrame
         #TODO Implement visual geojson features for github rendering
         totalGDFList.append(srcGDF)
