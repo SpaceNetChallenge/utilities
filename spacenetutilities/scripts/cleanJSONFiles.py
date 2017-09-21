@@ -92,10 +92,21 @@ if __name__ == '__main__':
 
     totalGDF = gpd.GeoDataFrame(pd.concat(totalGDFList))
     totalGDF.crs = srcGDF.crs
+    totalGeoJsonName = os.path.join(baseLocation, 'SpaceNetSummaryTindex.geojson')
+    if os.path.exists(totalGeoJsonName):
+        os.remove(totalGeoJsonName)
+
+
     totalGDF.to_file(os.path.join(baseLocation, 'SpaceNetSummaryTindex.geojson'), driver='GeoJSON')
 
 
+
+
+
+
+
     #totalGDF.to_file
+
 
 
 
