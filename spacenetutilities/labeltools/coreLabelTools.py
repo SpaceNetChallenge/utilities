@@ -399,7 +399,7 @@ def pixDFToObjectLabelDict(pixGDF,
 
     dictList = []
     # start object segment
-    for row in pixGDF.iterrows():
+    for idx, row in pixGDF.iterrows():
 
         if objectTypeField=='':
             objectType = objectType
