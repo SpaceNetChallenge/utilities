@@ -5,10 +5,12 @@ import csv
 import glob
 import shapely
 import fiona
+import json
 import geopandas as gpd
 import rasterio
 from scipy.ndimage import morphology
 from rasterio import features
+from rasterio.rio import convert
 from shapely.geometry.polygon import Polygon
 from shapely.geometry.linestring import LineString
 from shapely.geometry import shape, box
@@ -398,7 +400,7 @@ def pixDFToObjectLabelDict(pixGDF,
 
     dictList = []
     # start object segment
-    for row in pixGDF.iterrows():
+    for idx, row in pixGDF.iterrows():
 
         if objectTypeField=='':
             objectType = objectType
@@ -418,7 +420,7 @@ def pixDFToObjectLabelDict(pixGDF,
 
         # .bounds returns a tuple (minX,minY, maxX maxY)
 
-        geomBBox = box(row['geometry'].bounds)
+        geomBBox = box(*row['geometry'].bounds)
 
         if bboxResize != 1.0:
             geomBBox = affinity.scale(geomBBox, xfact=bboxResize, yfact=bboxResize)
@@ -517,8 +519,10 @@ def geoJsontoDict(geoJson, rasterImageName, datasetName='SpaceNet_V2',
                   objectTruncatedField='',
                   objectDifficultyField=''
                   ):
-
-    geoGDF = gpd.read_file(geoJson)
+    try:
+        geoGDF = gpd.read_file(geoJson)
+    except:
+        geoGDF=gpd.GeoDataFrame(geometry=[])
     with rasterio.open(rasterImageName) as src:
         src_meta = src.meta.copy()
 
@@ -617,7 +621,8 @@ def createDistanceTransform(rasterSrc, vectorSrc, npDistFileName='', units='pixe
 def convertGTiffTo8Bit(rasterImageName, outputImageName, outputFormat='GTiff',
                        minPercent=2,
                        maxPercent=98,
-                       maxValue=255):
+                       maxValue=255,
+                       verbose=False):
 
     # Other Format would be JPG
 
@@ -627,31 +632,75 @@ def convertGTiffTo8Bit(rasterImageName, outputImageName, outputFormat='GTiff',
         profile = src.profile
 
     # resize band
-    for bandId in range(profile['count']):
-         # data[bandId,:,:]
-        minBand = np.percentile(data[bandId,:,:], minPercent)
-        maxBand = np.percentile(data[bandId,:,:], maxPercent)
+    newData = []
+    # data[bandId,:,:]
+    minBand = np.percentile(data, minPercent)
+    maxBand = np.percentile(data, maxPercent)
 
-        # Clip lower percent of values to Zero
-        data[bandId, :, :] = data[bandId,:,:] - minBand
-        data[bandId, :, :][data[bandId,:,:]<=0] = 0
+    scale_ratio = maxValue/maxBand
+    if verbose:
+        print('scale_ratio = {}'.format(scale_ratio))
+        print('offset = {}'.format(minBand))
+        print('rasterImageName={}'.format(rasterImageName))
+    # Clip lower percent of values to Zero
+    #tmpData = data[bandId,:,:].astype('float64', casting='unsafe', copy=False)
+    data=data.astype('float64', casting='unsafe', copy=False)
+    #np.add(data, -1 * minBand, out=data, casting='unsafe')
+    data[data>=maxBand] = maxBand
+    data=data*scale_ratio
+    #np.add(data, -1 * minBand, out=data, casting='unsafe')
+    #data[data>=255]=255
+    #newData.append(tmpData)
 
-        #Normalize band to between 0 and 1 saturating values above the maxPercent
-        data[bandId, :, :] = data[bandId,:,:]/(maxBand-minBand)
-        data[bandId, :, :][data[bandId,:,:]>1]=1
 
-        # Rescale to max Value (255)
-        data[bandId, :, :] = data[bandId,:,:]*maxValue
-        data[bandId, :, :][data[bandId,:,:]>maxValue]=maxValue
+    data=data.astype('uint8', casting='unsafe', copy=False)
 
 
 
-    profile.update(dtype=rasterio.uint8,
-                   driver=outputFormat)
+    profile['driver']=outputFormat
+    profile['dtype']='uint8'
+    del profile['tiled']
+    del profile['interleave']
+    #profile.update(dtype='uint8',
+    #               driver=outputFormat,
+    #               photometric)
 
 
     with rasterio.open(outputImageName, 'w', **profile) as dst:
-        dst.write(data.astype(rasterio.uint8))
+        dst.write(data)
 
 
     return outputImageName
+
+
+def removeIdFieldFromJsonEntries(geoJson, geoJsonNew, featureKeyListToRemove=['Id', 'id'], featureItemsToAdd={}):
+    with open(geoJson) as json_data:
+        d = json.load(json_data)
+
+
+    featureList = d['features']
+    newFeatureList = []
+    for feature in featureList:
+        tmpFeature = dict(feature)
+        for featureKey in featureKeyListToRemove:
+            if featureKey in tmpFeature['properties']:
+                del tmpFeature['properties'][featureKey]
+
+        tmpFeature.update(featureItemsToAdd)
+        newFeatureList.append(tmpFeature)
+
+    d['features']=newFeatureList
+
+    if os.path.exists(geoJsonNew):
+        os.remove(geoJsonNew)
+    with open(geoJsonNew, 'w') as json_data:
+        json.dump(d, json_data)
+
+
+def removeIdinGeoJSONFolder(folder, modifier='noid'):
+
+    geoJsonList = glob.glob(os.path.join(folder, '*.geojson'))
+
+    for geojsonName in geoJsonList:
+        removeIdFieldFromJsonEntries(geojsonName, geojsonName.replace('.geojson', '{}.geojson'.format(modifier)))
+

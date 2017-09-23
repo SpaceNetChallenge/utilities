@@ -24,10 +24,10 @@ def writePacalVocObject(objectDict, top):
     SubElement(childObject, 'difficult').text = str(objectDict['difficult'])
     # write bounding box
     childBoundBox = SubElement(childObject, 'bndbox')
-    SubElement(childBoundBox, 'xmin').text = str(objectDict['truncated']['bndbox']['xmin'])
-    SubElement(childBoundBox, 'ymin').text = str(objectDict['truncated']['bndbox']['ymin'])
-    SubElement(childBoundBox, 'xmax').text = str(objectDict['truncated']['bndbox']['xmax'])
-    SubElement(childBoundBox, 'ymax').text = str(objectDict['truncated']['bndbox']['ymax'])
+    SubElement(childBoundBox, 'xmin').text = str(objectDict['bndbox']['xmin'])
+    SubElement(childBoundBox, 'ymin').text = str(objectDict['bndbox']['ymin'])
+    SubElement(childBoundBox, 'xmax').text = str(objectDict['bndbox']['xmax'])
+    SubElement(childBoundBox, 'ymax').text = str(objectDict['bndbox']['ymax'])
 
     return top
 
