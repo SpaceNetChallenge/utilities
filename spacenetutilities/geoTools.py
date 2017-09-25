@@ -17,14 +17,14 @@ from shapely.geometry.multilinestring import MultiLineString
 from shapely.geometry import shape
 from tqdm import tqdm
 import rtree
-
+import osmnx
 from functools import partial
 
-try:
-    import centerline
-    import osmnx
-except:
-    print("rtree not installed, Will break evaluation code")
+#try:
+#    import centerline
+#
+#except:
+#    print("rtree not installed, Will break evaluation code")
 
 
 def import_summary_geojson(geojsonfilename, removeNoBuildings=True):
@@ -848,72 +848,72 @@ def explodeGeoPandasFrame(inGDF):
 
     return outdf
 
-def calculateCenterLineFromGeopandasPolygon(inGDF,
-                                            centerLineDistanceInput_Meters=5,
-                                            simplifyDistanceMeters=5,
-                                            projectToUTM=True):
-
-    # project To UTM for GeoSpatial Measurements
-    if projectToUTM:
-        tmpGDF = osmnx.project_gdf(inGDF)
-    else:
-        tmpGDF = inGDF
-
-    # Explode GeoPandas
-    tmpGDF1 = explodeGeoPandasFrame(tmpGDF)
-    tmpGDF1.crs = tmpGDF.crs
-    gdf_centerline_utm = tmpGDF1
-
-
-    # Loop through Geomertries to calculate Centerline for Each Polygon
-    listOfGeoms = tmpGDF1['geometry'].values
-    lineStringList = []
-
-    for geom in listOfGeoms:
-        tmpGeom = centerline.Centerline(geom, centerLineDistanceInput_Meters)
-        lineStringList.append(tmpGeom.createCenterline())
-
-    gdf_centerline_utm['geometry'] = lineStringList
-
-    lineList = gdf_centerline_utm['geometry'].values
-    lineSimplifiedList = []
-
-    for geo in lineList:
-
-
-        if geo.type == 'MultiLineString':
-
-            geoNew = shapely.ops.linemerge(geo).simplify(simplifyDistanceMeters, preserve_topology=False)
-
-        else:
-
-            geoNew = geo.simplify(simplifyDistanceMeters, preserve_topology=False)
-
-        lineSimplifiedList.append(geoNew)
-
-    simplifiedGdf_utm = gpd.GeoDataFrame({'geometry': lineSimplifiedList})
-    simplifiedGdf_utm.crs = tmpGDF.crs
-    print (tmpGDF.crs)
-
-    if projectToUTM:
-        gdf_simple_centerline = simplifiedGdf_utm.to_crs(inGDF.crs)
-    else:
-        gdf_simple_centerline = simplifiedGdf_utm
-
-
-    return gdf_simple_centerline
-
-
-def calculateCenterLineFromOGR(inputSrcFile, centerLineDistanceInput_Meters=5, outputShpFile=''):
-
-    inGDF = gpd.read_file(inputSrcFile)
-    outGDF = calculateCenterLineFromGeopandasPolygon(inGDF, centerLineDistanceInput_Meters=centerLineDistanceInput_Meters)
-
-    if outputShpFile != '':
-        outGDF.to_file(outputShpFile)
-
-
-    return outGDF
+# def calculateCenterLineFromGeopandasPolygon(inGDF,
+#                                             centerLineDistanceInput_Meters=5,
+#                                             simplifyDistanceMeters=5,
+#                                             projectToUTM=True):
+#
+#     # project To UTM for GeoSpatial Measurements
+#     if projectToUTM:
+#         tmpGDF = osmnx.project_gdf(inGDF)
+#     else:
+#         tmpGDF = inGDF
+#
+#     # Explode GeoPandas
+#     tmpGDF1 = explodeGeoPandasFrame(tmpGDF)
+#     tmpGDF1.crs = tmpGDF.crs
+#     gdf_centerline_utm = tmpGDF1
+#
+#
+#     # Loop through Geomertries to calculate Centerline for Each Polygon
+#     listOfGeoms = tmpGDF1['geometry'].values
+#     lineStringList = []
+#
+#     for geom in listOfGeoms:
+#         tmpGeom = centerline.Centerline(geom, centerLineDistanceInput_Meters)
+#         lineStringList.append(tmpGeom.createCenterline())
+#
+#     gdf_centerline_utm['geometry'] = lineStringList
+#
+#     lineList = gdf_centerline_utm['geometry'].values
+#     lineSimplifiedList = []
+#
+#     for geo in lineList:
+#
+#
+#         if geo.type == 'MultiLineString':
+#
+#             geoNew = shapely.ops.linemerge(geo).simplify(simplifyDistanceMeters, preserve_topology=False)
+#
+#         else:
+#
+#             geoNew = geo.simplify(simplifyDistanceMeters, preserve_topology=False)
+#
+#         lineSimplifiedList.append(geoNew)
+#
+#     simplifiedGdf_utm = gpd.GeoDataFrame({'geometry': lineSimplifiedList})
+#     simplifiedGdf_utm.crs = tmpGDF.crs
+#     print (tmpGDF.crs)
+#
+#     if projectToUTM:
+#         gdf_simple_centerline = simplifiedGdf_utm.to_crs(inGDF.crs)
+#     else:
+#         gdf_simple_centerline = simplifiedGdf_utm
+#
+#
+#     return gdf_simple_centerline
+#
+#
+# def calculateCenterLineFromOGR(inputSrcFile, centerLineDistanceInput_Meters=5, outputShpFile=''):
+#
+#     inGDF = gpd.read_file(inputSrcFile)
+#     outGDF = calculateCenterLineFromGeopandasPolygon(inGDF, centerLineDistanceInput_Meters=centerLineDistanceInput_Meters)
+#
+#     if outputShpFile != '':
+#         outGDF.to_file(outputShpFile)
+#
+#
+#     return outGDF
 
 
 def createBufferGeoPandas(inGDF, bufferDistanceMeters=5, bufferRoundness=1, projectToUTM=True):
