@@ -3,7 +3,7 @@ from collections import OrderedDict
 from itertools import groupby
 from dateutil import parser as date_parser
 from shapely.geometry import Point
-from shapely.geometry import LineString
+from shapely.geometry import LineString, LinearRing
 from shapely.geometry import Polygon
 from shapely.geometry import MultiPolygon
 from shapely.ops import unary_union
@@ -68,7 +68,13 @@ def create_gdf_from_responseJSON(responseJsons):
     edgesList2 = []
     for edge in edgesList:
         gdflist = gdf_nodes['id'].map(lambda x: x in edge['nodes'])
-        edge.update({'geometry': LineString(list(gdf_nodes[gdflist].geometry.values))
+        print(len(edge))
+        print(edge)
+        if edge['nodes'][0] == edge['nodes'][-1]:
+            edge.update({'geometry': Polygon(LineString(list(gdf_nodes[gdflist].geometry.values)))
+                         })
+        else:
+            edge.update({'geometry': LineString(list(gdf_nodes[gdflist].geometry.values))
                      })
         edgesList2.append(edge)
     gdf_edges = gpd.GeoDataFrame(edgesList2)
