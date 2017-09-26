@@ -6,7 +6,7 @@ import argparse
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description='Create space_v2 evaluation csv')
     parser.add_argument("-imgDir", "--imgDir", type=str,
                         help="Directory of Raster Images")
     parser.add_argument("-geoDir", "--geojsonDir", type=str,
