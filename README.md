@@ -89,12 +89,6 @@ or
 ```commandline
     pip install --upgrade git+https://github.com/SpaceNetChallenge/utilities.git
 ```
-git clone -b spacenetV3 https://github.com/SpaceNetChallenge/utilities.git
-* 
-* Install the rest of the requirements through the requirements.txt file
-```commandline
-pip install -r requirements.txt
-```
 
 
 
