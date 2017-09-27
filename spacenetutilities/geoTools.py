@@ -233,7 +233,7 @@ def createBoxFromLine(tmpGeom, ratio=1, halfWidth=-999, transformRequired=True, 
         if transform_WGS84_To_UTM == '':
             transform_WGS84_To_UTM, transform_UTM_To_WGS84 = createUTMTransform(tmpGeom)
 
-        tmpGeom = shapely.ops.tranform(transform_WGS84_To_UTM, tmpGeom)
+        tmpGeom = shapely.ops.transform(transform_WGS84_To_UTM, tmpGeom)
 
 
 
@@ -252,7 +252,7 @@ def createBoxFromLine(tmpGeom, ratio=1, halfWidth=-999, transformRequired=True, 
     areaM = polyGeom.area
 
     if transformRequired:
-        polyGeom = shapely.ops.tranform(transform_UTM_To_WGS84, polyGeom)
+        polyGeom = shapely.ops.transform(transform_UTM_To_WGS84, polyGeom)
 
 
 
@@ -349,13 +349,15 @@ def createUTMTransform(polyGeom):
         pyproj.Proj("+proj=longlat +datum=WGS84 +no_defs"),  # Proj(proj='latlong',datum='WGS84')
 
     )
+    utm_cs = "+proj=utm +zone={} {} +ellps=WGS84 +datum=WGS84 +units=m +no_defs".format(utm_zone,
+                                                                                               directionIndicator)
 
-    return projectTO_UTM,  projectTO_WGS
+    return projectTO_UTM,  projectTO_WGS, utm_cs
 
 def transformGeomToUTM(geom):
     transform_WGS84_To_UTM, transform_UTM_To_WGS84 = createUTMTransform(geom)
 
-    return shapely.ops.tranform(transform_WGS84_To_UTM, geom)
+    return shapely.ops.transform(transform_WGS84_To_UTM, geom)
 
 
 def getRasterExtent(srcImage):
@@ -389,12 +391,12 @@ def createPolygonFromCenterPoint(point, radiusMeters, transform_WGS_To_UTM_Flag=
 
     transform_WGS84_To_UTM, transform_UTM_To_WGS84 = createUTMTransform(point)
     if transform_WGS_To_UTM_Flag:
-        point = shapely.ops.tranform(transform_WGS84_To_UTM, point)
+        point = shapely.ops.transform(transform_WGS84_To_UTM, point)
 
     poly = point.Buffer(radiusMeters)
 
     if transform_WGS_To_UTM_Flag:
-        poly = shapely.ops.tranform(transform_UTM_To_WGS84, poly)
+        poly = shapely.ops.transform(transform_UTM_To_WGS84, poly)
 
     return poly
 
@@ -408,7 +410,7 @@ def createPolygonFromCentroidGDF(gdf, radiusMeters, transform_WGS_To_UTM_Flag=Tr
     poly = gdf.centroids.buffer(radiusMeters)
 
     if transform_WGS_To_UTM_Flag:
-        poly = shapely.ops.tranform(transform_UTM_To_WGS84, poly)
+        poly = shapely.ops.transform(transform_UTM_To_WGS84, poly)
 
     return poly
 
@@ -482,7 +484,7 @@ def cutChipFromMosaic(rasterFileList, shapeFileSrcList, outlineSrc='',outputDire
 
     if not createPix:
         transform_WGS84_To_UTM, transform_UTM_To_WGS84, utm_cs = createUTMTransform(poly)
-        poly = shapely.ops.tranform(transform_WGS84_To_UTM, poly)
+        poly = shapely.ops.transform(transform_WGS84_To_UTM, poly)
 
 
     env = poly.bounds
@@ -493,7 +495,7 @@ def cutChipFromMosaic(rasterFileList, shapeFileSrcList, outlineSrc='',outputDire
 
     #return poly to WGS84
     if not createPix:
-        poly = shapely.ops.tranform(transform_UTM_To_WGS84, poly)
+        poly = shapely.ops.transform(transform_UTM_To_WGS84, poly)
 
     shapeSrcList = []
     for shapeFileSrc in shapeFileSrcList:
@@ -567,7 +569,7 @@ def cutChipFromMosaic(rasterFileList, shapeFileSrcList, outlineSrc='',outputDire
 
 
                 if not createPix:
-                    polyCut = shapely.ops.tranform(transform_UTM_To_WGS84, polyCut)
+                    polyCut = shapely.ops.transform(transform_UTM_To_WGS84, polyCut)
 
                 ## add debug line do cuts
                 if polyCut.intersects(geomOutline):
@@ -737,7 +739,7 @@ def cutChipFromRasterCenter(rasterFileList, shapeFileSrc, outlineSrc='',
         rasterFileBaseList.append(os.path.basename(rasterFile[0]))
 
     transform_WGS84_To_UTM, transform_UTM_To_WGS84, utm_cs = createUTMTransform(poly)
-    #poly = shapely.ops.tranform(transform_WGS84_To_UTM, poly)
+    #poly = shapely.ops.transform(transform_WGS84_To_UTM, poly)
 
 
 
