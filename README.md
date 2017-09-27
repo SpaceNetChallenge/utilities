@@ -10,7 +10,7 @@ Further download instructions for the [SpaceNet Dataset](https://github.com/Spac
 
 
 ## Installation Instructions
-Several packages require binaries to be installed before pip installing the other packages
+Several packages require binaries to be installed before pip installing the other packages.  Conda is a simple way to install everything and their dependencies
 
 * Install GDAL binaries and scripts 
 ```commandline
@@ -22,6 +22,9 @@ apt-get install libspatial
 ```
 
 * Install [pyproj](https://pypi.python.org/pypi/pyproj)
+
+
+
 
 * Pip Install from github 
 ```commandline
@@ -42,6 +45,56 @@ git clone -b spacenetV3 https://github.com/SpaceNetChallenge/utilities.git
 pip install -r requirements.txt
 ```
 
+## Conda Installation Instructions
+Several packages require binaries to be installed before pip installing the other packages.  Conda is a simple way to install everything and their dependencies
+
+* Install GDAL binaries and scripts 
+```commandline
+conda install -c conda-forge gdal
+```
+* Install [Rtree](http://toblerity.org/rtree/install.html) 
+```commandline 
+conda install -c conda-forge rtree
+```
+
+* Install [pyproj](https://pypi.python.org/pypi/pyproj)
+```commandline 
+conda install -c conda-forge pyproj
+```
+* Install [geopandas](https://pypi.python.org/pypi/geopandas)
+```commandline 
+conda install -c conda-forge geopandas
+```
+
+* Install [shapely](https://pypi.python.org/pypi/shapely)
+```commandline 
+conda install -c conda-forge shapely
+```
+
+* Install [rasterio](https://pypi.python.org/pypi/rasterio)
+```commandline 
+conda install -c conda-forge rasterio
+```
+
+
+* Pip Install from github 
+```commandline
+    git clone -b spacenetV3 https://github.com/SpaceNetChallenge/utilities.git
+    cd utilities
+    pip install -e .
+    
+```
+
+or 
+```commandline
+    pip install --upgrade git+https://github.com/SpaceNetChallenge/utilities.git
+```
+git clone -b spacenetV3 https://github.com/SpaceNetChallenge/utilities.git
+* 
+* Install the rest of the requirements through the requirements.txt file
+```commandline
+pip install -r requirements.txt
+```
 
 
 
