@@ -114,16 +114,17 @@ The script requires a few pre-processing steps, a recommended process for this w
 1. Build a VRT file to point to the source imagery.  A VRT is essentailly a virtual mosaic that links all the files, but does not build an entirely new (and monsterous) mosaic.  http://www.gdal.org/gdalbuildvrt.html is one of the best ways to do this easily.  A seperate VRT should be built for each type of imagery data you plan to use (Ex: Pan, Multi-spectral, etc..)
     
 2.  Build two CSV pointer files that point to the specific location of both your imagery VRT's and the labeled vector data (buildings, roads, etc..).  This file will have two columns with NO headers. 
-    
+
+```     
     Example raster CSV:
-```    
+   
     Column A:   Column B:
     PAN         C:/SpaceNet/Imagery/Vegas_PAN.vrt
     MUL         C:/SpaceNet/Imagery/Vegas_MUL.vrt
     MUL-PS      C:/SpaceNet/Imagery/Vegas_MUL-PS.vrt
-```    
+ 
     Example vector CSV:
-```    
+    
     Column A:   Column B:
     Buildings   C:/SpaceNet/Vector/Vegas_BuildingLabels.geojson
 ```
@@ -157,7 +158,7 @@ This tool currently supports the creation of datasets with annotation to support
 It will create the appropriate annotation files and a summary trainval.txt and test.txt in the outputDirectory
 
 ### Create an PASCAL VOC2012 Compatiable Dataset
-The final product will have image dimensions of 420 pixels
+The final product will have image dimensions of 400 pixels
 ```
 python python/createDataSpaceNet.py /path/to/spacenet_sample/AOI_2_Vegas_Train/ \
            --srcImageryDirectory RGB-PanSharpen
