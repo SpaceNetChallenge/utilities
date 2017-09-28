@@ -121,9 +121,9 @@ The script requires a few pre-processing steps, a recommended process for this w
     PAN         C:/SpaceNet/Imagery/Vegas_PAN.vrt
     MUL         C:/SpaceNet/Imagery/Vegas_MUL.vrt
     MUL-PS      C:/SpaceNet/Imagery/Vegas_MUL-PS.vrt
-    
+```    
     Example vector CSV:
-    
+```    
     Column A:   Column B:
     Buildings   C:/SpaceNet/Vector/Vegas_BuildingLabels.geojson
 ```
