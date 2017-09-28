@@ -116,7 +116,7 @@ The script requires a few pre-processing steps, a recommended process for this w
 2.  Build two CSV pointer files that point to the specific location of both your imagery VRT's and the labeled vector data (buildings, roads, etc..).  This file will have two columns with NO headers. 
     
     Example raster CSV:
-    
+```    
     Column A:   Column B:
     PAN         C:/SpaceNet/Imagery/Vegas_PAN.vrt
     MUL         C:/SpaceNet/Imagery/Vegas_MUL.vrt
@@ -126,7 +126,7 @@ The script requires a few pre-processing steps, a recommended process for this w
     
     Column A:   Column B:
     Buildings   C:/SpaceNet/Vector/Vegas_BuildingLabels.geojson
-
+```
 
     
 Script Inputs:
