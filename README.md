@@ -109,11 +109,11 @@ The SpaceNet imagery provided for this challenge must be processed and transform
 ## Chipping Imagery Code
 The script create_spacenet_AOI.py is used to create a SpaceNet competition dataset (chips) from a larger imagery dataset.  Its base function is to create an N x N meters (or N x N pxiels) chip with associated object labels (such as buildings or roads).  The script will only create chips in the area where labeled items exist, thus saving space and reducing computational intensity.
 
-The script requires a few pre-processing steps, a recommended process for this would be:
+The script requires a few pre-processing steps, a recommended process for this would be
 
-    1. Build a VRT file to point to the source imagery.  A VRT is essentailly a virtual mosaic that links all the files, but does not build an entirely new (and monsterous) mosaic.  http://www.gdal.org/gdalbuildvrt.html is one of the best ways to do this easily.  A seperate VRT should be built for each type of imagery data you plan to use (Ex: Pan, Multi-spectral, etc..)
+1. Build a VRT file to point to the source imagery.  A VRT is essentailly a virtual mosaic that links all the files, but does not build an entirely new (and monsterous) mosaic.  http://www.gdal.org/gdalbuildvrt.html is one of the best ways to do this easily.  A seperate VRT should be built for each type of imagery data you plan to use (Ex: Pan, Multi-spectral, etc..)
     
-    2.  Build two CSV pointer files that point to the specific location of both your imagery VRT's and the labeled vector data (buildings, roads, etc..).  This file will have two columns with NO headers. 
+2.  Build two CSV pointer files that point to the specific location of both your imagery VRT's and the labeled vector data (buildings, roads, etc..).  This file will have two columns with NO headers. 
     
     Example raster CSV:
     
@@ -126,6 +126,8 @@ The script requires a few pre-processing steps, a recommended process for this w
     
     Column A:   Column B:
     Buildings   C:/SpaceNet/Vector/Vegas_BuildingLabels.geojson
+
+
     
 Script Inputs:
     1. CSV of raster imagery VRT locations
