@@ -90,10 +90,14 @@ python python/evaluateScene.py /path/to/SpaceNetTruthFile.csv \
                                --resultsOutputFile /path/to/SpaceNetResults.csv
 ```
 
-## Using Spacenet Utilities to Process Imagery
-The imagery provided for this challenge must be processed and transformed into a deep-learning compatible format.  Spacenet utilites helps to achieve this transformation.  A traditional run may look similar to this:
-1. Chipping and clipping Imagery into smaller areas for deep learning
-2. Blah blah blah... to do
+## Using SpaceNet Utilities to Process Imagery and Vector Data
+The SpaceNet imagery provided for this challenge must be processed and transformed into a deep-learning compatible format.  SpaceNet utilites helps to achieve this transformation.  A traditional run may look similar to this:
+1. Chipping and clipping SpaceNet imagery into smaller areas to allow for deep learning consumption (create_spacenet_AOI.py)
+2. Split imagery and vector datasets (such as building or road labels) into training, testing, and validation datasets randomly (splitAOI_Train_Test_Val.py)
+3. Easily add or update your vector datasets to seamlessly match existing SpaceNet imagery chips. (externalVectorProcessing.py)
+4. Translate SpaceNet image chips and vector data into various machine learning and deep learning consumable formats such as PASCAL VOC2012, DarkNet, or Semantic Boundaries Dataset (SBD). (createDataSpaceNet.py)
+5. Evaluate your deep learning outputs against validation datasets to determine your results' accuracy and estimate the amount of comission and omission errors ocurring. (createDataSpaceNet.py)
+6.  Various other maintenance utility scripts to enhance ease of use.
 
 
 ## Chipping Imagery Code
