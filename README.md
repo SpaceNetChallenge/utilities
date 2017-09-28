@@ -131,10 +131,10 @@ The script requires a few pre-processing steps, a recommended process for this w
 
     
 Script Inputs:
-    1. CSV of raster imagery VRT locations
-    2. CSV of vector labels (geojson)
-    3. SRC_Outline- The outline of where labelling is ocurring in a geojson format
-    4.  Other optional inputs are also availble, more information on these can be gleaned by looking into the raw code itself or using      the -h help feature.
+1. CSV of raster imagery VRT locations
+2. CSV of vector labels (geojson)
+3. SRC_Outline- The outline of where labelling is ocurring in a geojson format
+4.  Other optional inputs are also availble, more information on these can be gleaned by looking into the raw code itself or using      the -h help feature.
     
    
     
