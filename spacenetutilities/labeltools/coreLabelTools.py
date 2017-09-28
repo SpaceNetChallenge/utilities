@@ -185,7 +185,7 @@ def createCSVSummaryFile(chipSummaryList, outputFileName, rasterChipDirectory=''
                          pixPrecision=2):
 
 
-    with open(outputFileName, 'wb') as csvfile:
+    with open(outputFileName, 'w') as csvfile:
         writerTotal = csv.writer(csvfile, delimiter=',', lineterminator='\n')
         if createProposalsFile:
             writerTotal.writerow(['ImageId', 'BuildingId', 'PolygonWKT_Pix', 'Confidence'])
