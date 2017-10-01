@@ -185,7 +185,7 @@ def createCSVSummaryFile(chipSummaryList, outputFileName, rasterChipDirectory=''
                          pixPrecision=2):
 
 
-    with open(outputFileName, 'wb') as csvfile:
+    with open(outputFileName, 'w') as csvfile:
         writerTotal = csv.writer(csvfile, delimiter=',', lineterminator='\n')
         if createProposalsFile:
             writerTotal.writerow(['ImageId', 'BuildingId', 'PolygonWKT_Pix', 'Confidence'])
@@ -323,10 +323,11 @@ def createAOIName(AOI_Name, AOI_Num,
                   minpartialPerc=0.0,
                   vrtMosaic=True,
                   createPix=False,
-                  createSummaryCSVChallenge=True,
                   csvLabel='All',
                   featureName='Buildings',
-                  verbose=False):
+                  verbose=False,
+                  dumpChipListToJSON=True,
+                  createSummaryCSVChallenge=False):
 
     srcImageryList = []
 
@@ -382,8 +383,15 @@ def createAOIName(AOI_Name, AOI_Num,
                                            verbose=verbose)
 
 
+
     outputCSVSummaryName = 'AOI_{}_{}_{}_{}_solutions.csv'.format(AOI_Num, AOI_Name, csvLabel,featureName)
-    createCSVSummaryFile(chipSummaryList, outputCSVSummaryName, rasterChipDirectory='', replaceImageID='',
+
+    if  dumpChipListToJSON:
+        with open(outputCSVSummaryName.replace(".csv", ".json"), 'w') as json_data:
+            json.dump(chipSummaryList, json_data)
+
+    if createSummaryCSVChallenge:
+        createCSVSummaryFile(chipSummaryList, outputCSVSummaryName, rasterChipDirectory='', replaceImageID='',
                          createProposalsFile=False,
                          pixPrecision=2)
 
