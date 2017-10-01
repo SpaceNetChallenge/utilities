@@ -695,6 +695,7 @@ def createclip(outputDirectory, rasterFileList, shapeSrcList,
         polyVectorCut = polyCutWGS.intersection(rasterPolyEnvelope)
 
     # Interate thorough Vector Src List
+    vectorNameList = []
     for shapeSrc in shapeSrcList:
         if imgId == -1:
             outGeoJson = outputPrefix + shapeSrc[1] + \
@@ -704,13 +705,13 @@ def createclip(outputDirectory, rasterFileList, shapeSrcList,
                          "_" + baseName + "_img{}.geojson".format(imgId)
 
         outGeoJson = os.path.join(outputDirectory, 'geojson', shapeSrc[1], outGeoJson)
-
+        vectorNameList.append(outGeoJson)
         clipShapeFile(shapeSrc[0], outGeoJson, polyVectorCut, minpartialPerc=minpartialPerc)
 
 
     chipSummary = {'rasterSource': baseLayerRasterName,
-                   'chipName': chipNameList[0],
-                   'geoVectorName': outGeoJson,
+                   'chipName': chipNameList,
+                   'geoVectorName': vectorNameList,
                    'pixVectorName': ''
                    }
 
