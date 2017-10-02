@@ -395,7 +395,7 @@ def createAOIName(AOI_Name, AOI_Num,
                          createProposalsFile=False,
                          pixPrecision=2)
 
-
+    return chipSummaryList
 
 
 def pixDFToObjectLabelDict(pixGDF,
