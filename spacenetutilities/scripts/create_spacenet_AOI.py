@@ -53,6 +53,10 @@ if __name__ == '__main__':
                         help='Type of feature to be summarized by csv (i.e. Building)',
                         type=str,
                         default='Buildings')
+    parser.add_argument("--DoNotclipImageryToAOI",
+                        help='Type of feature to be summarized by csv (i.e. Building)',
+                        action="store_true",
+                        default=False)
 
     # geoJSON AOI boundary
     args = parser.parse_args()
@@ -63,9 +67,10 @@ if __name__ == '__main__':
     AOI_Name = args.AOI_Name
     AOI_Num = args.AOI_Num
     srcOutline = args.srcOutline
-    clipImageryToAOI=True
+    clipImageryToAOI=~args.DoNotclipImageryToAOI
     if srcOutline=='':
         clipImageryToAOI=False
+
 
     outputDirectory = args.outputDirectory
 
