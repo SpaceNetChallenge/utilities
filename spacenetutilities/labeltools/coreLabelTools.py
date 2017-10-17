@@ -326,7 +326,8 @@ def createAOIName(AOI_Name, AOI_Num,
                   createSummaryCSVChallenge=True,
                   csvLabel='All',
                   featureName='Buildings',
-                  verbose=False):
+                  verbose=False,
+                  objectSrcFile=''):
 
     srcImageryList = []
 
@@ -373,7 +374,8 @@ def createAOIName(AOI_Name, AOI_Num,
         #                       ['/path/to/8band_AOI_1.tif, '8band']
         #                        ]
 
-    chipSummaryList = gT.cutChipFromMosaic(srcImageryList, srcVectorFileList, outlineSrc=srcVectorAOIFile,
+    if objectSrcFile=='':
+        chipSummaryList = gT.cutChipFromMosaic(srcImageryList, srcVectorFileList, outlineSrc=srcVectorAOIFile,
                                            outputDirectory=outputDirectory, outputPrefix='',
                                            clipSizeMX=windowSizeMeters, clipSizeMY=windowSizeMeters, clipOverlap=clipOverlap,
                                            minpartialPerc=minpartialPerc, createPix=createPix,
@@ -382,10 +384,14 @@ def createAOIName(AOI_Name, AOI_Num,
                                            verbose=verbose)
 
 
-    outputCSVSummaryName = 'AOI_{}_{}_{}_{}_solutions.csv'.format(AOI_Num, AOI_Name, csvLabel,featureName)
-    createCSVSummaryFile(chipSummaryList, outputCSVSummaryName, rasterChipDirectory='', replaceImageID='',
-                         createProposalsFile=False,
-                         pixPrecision=2)
+    else:
+        gdfSrc = gpd.read_file(objectSrcFile)
+        chipSummaryList = gT.cutChipFromRasterCenter(srcImageryList, gdfSrc, srcVectorFileList, outlineSrc=srcVectorAOIFile,
+                                               outputDirectory=outputDirectory, outputPrefix='',
+                                               clipSizeMeters=windowSizeMeters,
+                                               minpartialPerc=minpartialPerc, createPix=createPix,
+                                               baseName='AOI_{}_{}'.format(AOI_Num, AOI_Name),
+                                               verbose=verbose)
 
 
 
