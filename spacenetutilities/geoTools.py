@@ -17,7 +17,6 @@ from shapely.geometry.multilinestring import MultiLineString
 from shapely.geometry import shape
 from tqdm import tqdm
 import rtree
-import osmnx
 from functools import partial
 
 #try:
@@ -304,7 +303,7 @@ def utm_isNorthern(latitude):
 
 
 def createUTMandLatLonCrs(polyGeom):
-
+    print("does not work below equator yet")
     polyCentroid = polyGeom.centroid
     utm_zone = utm_getZone(polyCentroid.x)
     is_northern = utm_isNorthern(polyCentroid.y)
@@ -333,6 +332,7 @@ def createUTMTransform(polyGeom):
     else:
         directionIndicator = '+south'
 
+    print('utm zone = {}'.format(utm_zone))
     projectTO_UTM = partial(
         pyproj.transform,
         pyproj.Proj("+proj=longlat +datum=WGS84 +no_defs"),  #Proj(proj='latlong',datum='WGS84')
@@ -367,7 +367,8 @@ def getRasterExtent(srcImage):
     poly = Polygon(((srcImage.bounds.left, srcImage.bounds.top),
                    (srcImage.bounds.right, srcImage.bounds.top),
                    (srcImage.bounds.right, srcImage.bounds.bottom),
-                   (srcImage.bounds.left, srcImage.bounds.bottom))
+                   (srcImage.bounds.left, srcImage.bounds.bottom),
+                    (srcImage.bounds.left, srcImage.bounds.top))
                     )
 
 
@@ -389,16 +390,17 @@ def createPolygonFromCenterPointXY(cX,cY, radiusMeters, transform_WGS_To_UTM_Fla
 def createPolygonFromCenterPoint(point, radiusMeters, transform_WGS_To_UTM_Flag=True):
 
 
-    transform_WGS84_To_UTM, transform_UTM_To_WGS84 = createUTMTransform(point)
+
     if transform_WGS_To_UTM_Flag:
+        transform_WGS84_To_UTM, transform_UTM_To_WGS84 = createUTMTransform(point)
         point = shapely.ops.transform(transform_WGS84_To_UTM, point)
 
-    poly = point.Buffer(radiusMeters)
+    poly = point.buffer(radiusMeters)
 
     if transform_WGS_To_UTM_Flag:
         poly = shapely.ops.transform(transform_UTM_To_WGS84, poly)
 
-    return poly
+    return poly.envelope
 
 def createPolygonFromCentroidGDF(gdf, radiusMeters, transform_WGS_To_UTM_Flag=True):
 
@@ -419,9 +421,10 @@ def createPolygonFromCorners(left,bottom,right, top):
     poly = Polygon(
         (
             (left, top),
-            (right, top),
+            (left, bottom),
             (right, bottom),
-            (left, bottom)
+            (right, top),
+            (left, top)
         )
     )
 
@@ -443,10 +446,12 @@ def clipShapeFile(geoDF, outputFileName, polyToCut, minpartialPerc=0.0, shapeLab
 
     #TODO must implement different case for lines and for spatialIndex
 
-
-    cutGeoDF = geoDF.loc[geoDF.intersection(polyToCut).area/geoDF['origarea'] > minpartialPerc].copy()
-    cutGeoDF['partialDec'] = cutGeoDF.area/cutGeoDF['origarea']
-    cutGeoDF['truncated'] = (cutGeoDF['partialDec']==1.0).astype(int)
+    cutGeoDF = geoDF.copy()
+    cutGeoDF.geometry=geoDF.intersection(polyToCut)
+    cutGeoDF['partialDec'] = cutGeoDF.area / cutGeoDF['origarea']
+    cutGeoDF = cutGeoDF.loc[cutGeoDF['partialDec'] > minpartialPerc].copy()
+    #cutGeoDF = geoDF.loc[geoDF.intersection(polyToCut).area/geoDF['origarea'] > minpartialPerc].copy()
+    cutGeoDF['truncated'] = (cutGeoDF['partialDec']!=1.0).astype(int)
 
     if cutGeoDF.empty:
         with open(outGeoJSon, 'a'):
@@ -690,9 +695,19 @@ def createclip(outputDirectory, rasterFileList, shapeSrcList,
     if rasterPolyEnvelope.area == 0:
         srcImage = rio.open(rasterFileList[0][0])
         geoTrans, rasterPolyEnvelope, ulX, ulY, lrX, lrY = getRasterExtent(srcImage)
-        polyVectorCut = polyCutWGS.intersection(rasterPolyEnvelope)
+        if verbose:
+            print("rasterPolyEnvelope={}".format(rasterPolyEnvelope.wkt))
+            print("polyCutWGS={}".format(polyCutWGS.wkt))
+
     else:
+
         polyVectorCut = polyCutWGS.intersection(rasterPolyEnvelope)
+
+        if verbose:
+            print("rasterPolyEnvelope={}".format(rasterPolyEnvelope))
+            print("polyCutWGS={}".format(polyCutWGS))
+            print('polyVectorCut area={}'.format(polyVectorCut.area))
+            print("polyVectorCut={}".format(polyVectorCut))
 
     # Interate thorough Vector Src List
     for shapeSrc in shapeSrcList:
@@ -716,13 +731,16 @@ def createclip(outputDirectory, rasterFileList, shapeSrcList,
 
     return chipSummary
 
-def cutChipFromRasterCenter(rasterFileList, shapeFileSrc, outlineSrc='',
+
+
+def cutChipFromRasterCenter(rasterFileList, shapeFileSrc, shapeFileSrcList, outlineSrc='',
                             outputDirectory='', outputPrefix='clip_',
                             clipSizeMeters=50, createPix=False,
-                            classFieldName = 'TYPE',
+                            classFieldName='TYPE',
                             minpartialPerc=0.1,
-                            preciseMatch=True,
-                            verbose=False
+                            preciseMatch=False,
+                            verbose=False,
+                            baseName=''
                             ):
     #rasterFileList = [['rasterLocation', 'rasterDescription']]
     # i.e rasterFileList = [['/path/to/3band_AOI_1.tif, '3band'],
@@ -737,16 +755,17 @@ def cutChipFromRasterCenter(rasterFileList, shapeFileSrc, outlineSrc='',
     rasterFileBaseList = []
     for rasterFile in rasterFileList:
         rasterFileBaseList.append(os.path.basename(rasterFile[0]))
-
-    transform_WGS84_To_UTM, transform_UTM_To_WGS84, utm_cs = createUTMTransform(poly)
+    # Check if Transform Is Neccessary
+    #transform_WGS84_To_UTM, transform_UTM_To_WGS84, utm_cs = createUTMTransform(poly)
     #poly = shapely.ops.transform(transform_WGS84_To_UTM, poly)
 
 
 
-    shapeSrc = gpd.read_file(shapeFileSrc)
+
 
     if outlineSrc == '':
         geomOutline = poly
+        print('geomOutline poly={}'.format(geomOutline.wkt))
 
     else:
         with fiona.open(outlineSrc) as src:
@@ -755,11 +774,17 @@ def cutChipFromRasterCenter(rasterFileList, shapeFileSrc, outlineSrc='',
             geomOutline = geomOutlineBase.intersection(poly)
 
     # use sindex function of geoPandas for filter
-    shapeSrcBaseGDF = gpd.read_file(shapeFileSrc, 0)
+    shapeSrcBaseGDF = shapeFileSrc
+    if shapeFileSrc.crs['init'] == 'epsg:4326':
+        utmConversionNeeded = True
+    else:
+        utmConversionNeeded = False
+
+    print("srcFileShape = {}".format(shapeSrcBaseGDF.shape))
     shapeSrcBaseIndex = shapeSrcBaseGDF.sindex
     possible_matches_index = list(shapeSrcBaseIndex.intersection(geomOutline.bounds))
     possible_matches = shapeSrcBaseGDF.iloc[possible_matches_index]
-
+    print("PossibleMatches = {}".format(possible_matches.shape))
     #if geomOutline is very irregular, preciseMatch will be neccessary
     if preciseMatch:
         layerBase = possible_matches[possible_matches.intersects(geomOutline)]
@@ -772,31 +797,49 @@ def cutChipFromRasterCenter(rasterFileList, shapeFileSrc, outlineSrc='',
         if not os.path.exists(os.path.join(outputDirectory, rasterFile[1])):
             os.makedirs(os.path.join(outputDirectory, rasterFile[1]))
 
-    for idx, feature in layerBase.iterrows():
-        featureGeom = feature['geometry']
-        cx = featureGeom.centroid.x
-        cy = featureGeom.centroid.y
+    shapeSrcList = []
+    for shapeFileSrc in shapeFileSrcList:
+        print(shapeFileSrc[1])
+        shapeSrcList.append([gpd.read_file(shapeFileSrc[0]), shapeFileSrc[1]])
 
-        polyCut = createPolygonFromCenterPoint(cx, cy, radiusMeters=clipSizeMeters)
+    chipSummaryList = []
+    for idx, feature in tqdm(layerBase.iterrows(), desc="Processing Features"):
+        featureGeom = feature['geometry']
+        #cx = featureGeom.centroid.x
+        #cy = featureGeom.centroid.y
+
+        polyCut = createPolygonFromCenterPoint(featureGeom.centroid, radiusMeters=clipSizeMeters, transform_WGS_To_UTM_Flag=utmConversionNeeded)
 
         if verbose:
             print(classFieldName)
+        if classFieldName!='':
+            if classFieldName in feature:
+                classDescription = feature[classFieldName]
+            else:
+                classDescription = 'unknown'
 
-        classDescription = feature[classFieldName]
+            for rasterFile in rasterFileList:
+                if not os.path.exists(os.path.join(outputDirectory, rasterFile[1], classDescription)):
+                    os.makedirs(os.path.join(outputDirectory, rasterFile[1], classDescription))
+        else:
+            classDescription=''
         #Eliminate WhiteSpace
         classDescription = classDescription.replace(" ","")
 
         minXCut, minYCut, maxXCut, maxYCut = polyCut.bounds
 
-        createclip(outputDirectory, rasterFileList, shapeSrc,
+        chipSummary = createclip(outputDirectory, rasterFileList, shapeSrcList,
                        maxXCut, maxYCut, minYCut, minXCut,
                        rasterFileBaseList=rasterFileBaseList,
                        minpartialPerc=minpartialPerc,
                        outputPrefix=outputPrefix,
                        createPix=createPix,
                        rasterPolyEnvelope=poly,
-                       className=classDescription)
+                       className=classDescription,
+                       baseName=baseName
+                                 )
 
+        chipSummaryList.append(chipSummary)
 
 
 def rotateClip(clipFileName, sourceGeoJson, rotaionList=[0,90,180,275]):
