@@ -402,7 +402,9 @@ def pixDFToObjectLabelDict(pixGDF,
                               objectTypeField='',
                               objectPose='Left',
                               objectTruncatedField='',
-                              objectDifficultyField=''):
+                              objectDifficultyField='',
+                           truncatePercent=0,
+                           truncatedPercentField='partialDec'):
 
     dictList = []
     # start object segment
@@ -422,30 +424,37 @@ def pixDFToObjectLabelDict(pixGDF,
             objectDifficulty = 0
         else:
             objectDifficulty = row[objectDifficultyField]
+        includeObject=True
+        if truncatePercent>0:
+            if truncatedPercentField in row:
+                if row[truncatedPercentField]>truncatePercent:
+                    includeObject=True
+                else:
+                    includeObject=False
 
 
         # .bounds returns a tuple (minX,minY, maxX maxY)
+        if includeObject:
+            geomBBox = box(*row['geometry'].bounds)
 
-        geomBBox = box(*row['geometry'].bounds)
+            if bboxResize != 1.0:
+                geomBBox = affinity.scale(geomBBox, xfact=bboxResize, yfact=bboxResize)
 
-        if bboxResize != 1.0:
-            geomBBox = affinity.scale(geomBBox, xfact=bboxResize, yfact=bboxResize)
+            xmin, ymin, xmax, ymax = geomBBox.bounds
 
-        xmin, ymin, xmax, ymax = geomBBox.bounds
+            dictEntry = {'objectType': objectType,
+                        'pose': objectPose,
+                        'truncated': objectTruncated,
+                        'difficult': objectDifficulty,
+                        'bndbox': {'xmin': xmin,
+                                   'ymin': ymin,
+                                   'xmax': xmax,
+                                   'ymax': ymax
+                                   },
+                        'geometry': row['geometry'].wkt,
+                        }
 
-        dictEntry = {'objectType': objectType,
-                    'pose': objectPose,
-                    'truncated': objectTruncated,
-                    'difficult': objectDifficulty,
-                    'bndbox': {'xmin': xmin,
-                               'ymin': ymin,
-                               'xmax': xmax,
-                               'ymax': ymax
-                               },
-                    'geometry': row['geometry'].wkt,
-                    }
-
-        dictList.append(dictEntry)
+            dictList.append(dictEntry)
 
     return dictList
 
@@ -454,7 +463,9 @@ def geoDFtoObjectDict(geoGDF,src_meta, bboxResize=1.0,
                       objectTypeField='',
                       objectPose='Left',
                       objectTruncatedField='',
-                      objectDifficultyField=''):
+                      objectDifficultyField='',
+                      truncatePercent=0,
+                      truncatedPercentField='partialDec'):
 
 
     pixGDF = gT.geoDFtoPixDF(geoGDF, src_meta['transform'])
@@ -465,7 +476,9 @@ def geoDFtoObjectDict(geoGDF,src_meta, bboxResize=1.0,
                            objectTypeField=objectTypeField,
                            objectPose=objectPose,
                            objectTruncatedField=objectTruncatedField,
-                           objectDifficultyField=objectDifficultyField)
+                           objectDifficultyField=objectDifficultyField,
+                                            truncatePercent=truncatePercent,
+                                            truncatedPercentField=truncatedPercentField)
 
     return objectDictList
 
@@ -498,7 +511,9 @@ def geoDFtoDict(geoGDF, rasterImageName, src_meta, datasetName='SpaceNet_V2',
                   objectTypeField='',
                   objectPose='Left',
                   objectTruncatedField='',
-                  objectDifficultyField=''
+                  objectDifficultyField='',
+                truncatePercent=0,
+                truncatedPercentField='partialDec'
                   ):
 
     imageDescriptionDict = createRasterSummaryDict(rasterImageName, src_meta, datasetName=datasetName,
@@ -509,7 +524,9 @@ def geoDFtoDict(geoGDF, rasterImageName, src_meta, datasetName='SpaceNet_V2',
                            objectTypeField=objectTypeField,
                            objectPose=objectPose,
                            objectTruncatedField=objectTruncatedField,
-                           objectDifficultyField=objectDifficultyField)
+                           objectDifficultyField=objectDifficultyField,
+                                       truncatePercent=truncatePercent,
+                                       truncatedPercentField=truncatedPercentField)
 
 
     return imageDescriptionDict, objectDictList
@@ -523,7 +540,9 @@ def geoJsontoDict(geoJson, rasterImageName, datasetName='SpaceNet_V2',
                   objectTypeField='',
                   objectPose='Left',
                   objectTruncatedField='',
-                  objectDifficultyField=''
+                  objectDifficultyField='',
+                  truncatePercent=0,
+                  truncatedPercentField='partialDec'
                   ):
     try:
         geoGDF = gpd.read_file(geoJson)
@@ -539,7 +558,9 @@ def geoJsontoDict(geoJson, rasterImageName, datasetName='SpaceNet_V2',
                     objectTypeField=objectTypeField,
                     objectPose=objectPose,
                     objectTruncatedField=objectTruncatedField,
-                    objectDifficultyField=objectDifficultyField
+                    objectDifficultyField=objectDifficultyField,
+                       truncatePercent=truncatePercent,
+                       truncatedPercentField=truncatedPercentField
                     )
 
 

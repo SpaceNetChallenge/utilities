@@ -84,7 +84,9 @@ def geoJsonToPASCALVOC2012Label(xmlFileName, geoJson, rasterImageName, im_id='',
                            outputFormat='GTiff',
                            bboxResize=1.0,
                            objectType='building',
-                           objectTypeField=''):
+                           objectTypeField='',
+                           truncatePercent=0,
+                           truncatedPercentField='partialDec'):
 
     imageDescriptionDict, objectDictList = clT.geoJsontoDict(geoJson, rasterImageName, datasetName=dataset,
                   annotationStyle=annotationStyle,
@@ -93,7 +95,9 @@ def geoJsonToPASCALVOC2012Label(xmlFileName, geoJson, rasterImageName, im_id='',
                   objectTypeField=objectTypeField,
                   objectPose='Left',
                   objectTruncatedField='',
-                  objectDifficultyField=''
+                  objectDifficultyField='',
+                                                             truncatePercent=truncatePercent,
+                                                             truncatedPercentField=truncatedPercentField
                   )
 
     xmlFileName = writeToPascalVOCLabel(xmlFileName, imageDescriptionDict, objectDictList)
@@ -169,7 +173,10 @@ def geoJsonToPASCALVOC2012(xmlFileName, geoJson, rasterImageName, im_id='',
                            objectTypeField='',
                            clsPNGName='',
                            objPNGName='',
-                           outputRasterName=''):
+                           outputRasterName='',
+                           truncatePercent=0,
+                           truncatedPercentField='partialDec'
+                           ):
 
 
 
@@ -184,7 +191,10 @@ def geoJsonToPASCALVOC2012(xmlFileName, geoJson, rasterImageName, im_id='',
                                 outputFormat=outputFormat,
                                 bboxResize=bboxResize,
                                 objectType=objectType,
-                                objectTypeField=objectTypeField)
+                                objectTypeField=objectTypeField,
+                                truncatePercent=truncatePercent,
+                                truncatedPercentField=truncatedPercentField
+                                )
 
     with rasterio.open(rasterImageName) as src:
         src_meta = src.meta.copy()
