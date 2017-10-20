@@ -431,6 +431,8 @@ def pixDFToObjectLabelDict(pixGDF,
                     includeObject=True
                 else:
                     includeObject=False
+            else:
+                includeObject=True
 
 
         # .bounds returns a tuple (minX,minY, maxX maxY)
