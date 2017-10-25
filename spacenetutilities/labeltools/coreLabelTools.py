@@ -648,21 +648,30 @@ def createDistanceTransform(rasterSrc, vectorSrc, npDistFileName='', units='pixe
 
 
 def convertGTiffTo8Bit(rasterImageName, outputImageName, outputFormat='GTiff',
-                       minPercent=2,
+                       minPercent=0,
                        maxPercent=98,
                        maxValue=255,
-                       verbose=False):
+                       verbose=False,
+                       bandsToInclude=[]
+                       ):
 
     # Other Format would be JPG
+    if outputFormat.upper() == 'JPG':
+        if not bandsToInclude:
+            bandsToInclude = [0,1,2]
+
+
+
 
 
     with rasterio.open(rasterImageName) as src:
         data = src.read()
         profile = src.profile
 
-    # resize band
-    newData = []
-    # data[bandId,:,:]
+    # Which bands to include in conversion
+    if bandsToInclude:
+        data = data[bandsToInclude]
+
     minBand = np.percentile(data, minPercent)
     maxBand = np.percentile(data, maxPercent)
 
@@ -672,14 +681,10 @@ def convertGTiffTo8Bit(rasterImageName, outputImageName, outputFormat='GTiff',
         print('offset = {}'.format(minBand))
         print('rasterImageName={}'.format(rasterImageName))
     # Clip lower percent of values to Zero
-    #tmpData = data[bandId,:,:].astype('float64', casting='unsafe', copy=False)
+
     data=data.astype('float64', casting='unsafe', copy=False)
-    #np.add(data, -1 * minBand, out=data, casting='unsafe')
     data[data>=maxBand] = maxBand
     data=data*scale_ratio
-    #np.add(data, -1 * minBand, out=data, casting='unsafe')
-    #data[data>=255]=255
-    #newData.append(tmpData)
 
 
     data=data.astype('uint8', casting='unsafe', copy=False)
