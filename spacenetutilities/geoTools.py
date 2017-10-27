@@ -322,11 +322,21 @@ def createUTMandLatLonCrs(polyGeom):
 
     return utm_crs, latlong_crs
 
-def createUTMTransform(polyGeom):
+def createUTMTransform(polyGeom, srcCrs="+proj=longlat +datum=WGS84 +no_defs"):
 
-    polyCentroid = polyGeom.centroid
-    utm_zone = utm_getZone(polyCentroid.x)
-    is_northern = utm_isNorthern(polyCentroid.y)
+    wgs84CRS = "+proj=longlat +datum=WGS84 +no_defs"
+    projectTO_WGSBase = partial(
+        pyproj.transform,
+        pyproj.Proj(srcCrs),
+        pyproj.Proj(wgs84CRS)  # Proj(proj='latlong',datum='WGS84')
+
+    )
+    polyGeomWGS = shapely.ops.transform(projectTO_WGSBase, polyGeom)
+
+
+    polyCentroid = polyGeomWGS.centroid
+    utm_zone = gT.utm_getZone(polyCentroid.x)
+    is_northern = gT.utm_isNorthern(polyCentroid.y)
     if is_northern:
         directionIndicator = '+north'
     else:
@@ -335,30 +345,29 @@ def createUTMTransform(polyGeom):
     print('utm zone = {}'.format(utm_zone))
     projectTO_UTM = partial(
         pyproj.transform,
-        pyproj.Proj("+proj=longlat +datum=WGS84 +no_defs"),  #Proj(proj='latlong',datum='WGS84')
+        pyproj.Proj(srcCrs),  #Proj(proj='latlong',datum='WGS84')
         pyproj.Proj("+proj=utm +zone={} {} +ellps=WGS84 +datum=WGS84 +units=m +no_defs".format(utm_zone,
                                                                                                directionIndicator))
     )
 
 
-    projectTO_WGS = partial(
+    projectTO_SrcCRS = partial(
         pyproj.transform,
         pyproj.Proj("+proj=utm +zone={} {} +ellps=WGS84 +datum=WGS84 +units=m +no_defs".format(utm_zone,
                                                                                                directionIndicator)
                     ),
-        pyproj.Proj("+proj=longlat +datum=WGS84 +no_defs"),  # Proj(proj='latlong',datum='WGS84')
+        pyproj.Proj(srcCrs)  # Proj(proj='latlong',datum='WGS84')
 
     )
     utm_cs = "+proj=utm +zone={} {} +ellps=WGS84 +datum=WGS84 +units=m +no_defs".format(utm_zone,
                                                                                                directionIndicator)
 
-    return projectTO_UTM,  projectTO_WGS, utm_cs
+    return projectTO_UTM,  projectTO_SrcCRS, utm_cs
 
-def transformGeomToUTM(geom):
-    transform_WGS84_To_UTM, transform_UTM_To_WGS84 = createUTMTransform(geom)
+def transformGeomToUTM(geom, srcCrs="+proj=longlat +datum=WGS84 +no_defs"):
+    projectTO_UTM, projectTO_Src, utm_cs = createUTMTransform(geom, srcCrs=srcCrs)
 
-    return shapely.ops.transform(transform_WGS84_To_UTM, geom)
-
+    return shapely.ops.transform(projectTO_UTM, geom)
 
 def getRasterExtent(srcImage):
     'returns srcImage.transform which is an Affine Object'
