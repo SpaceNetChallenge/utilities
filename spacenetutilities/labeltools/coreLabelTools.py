@@ -323,11 +323,13 @@ def createAOIName(AOI_Name, AOI_Num,
                   minpartialPerc=0.0,
                   vrtMosaic=True,
                   createPix=False,
-                  createSummaryCSVChallenge=True,
                   csvLabel='All',
                   featureName='Buildings',
                   verbose=False,
+                  dumpChipListToJSON=True,
+                  createSummaryCSVChallenge=False):
                   objectSrcFile=''):
+
 
     srcImageryList = []
 
@@ -394,6 +396,7 @@ def createAOIName(AOI_Name, AOI_Num,
                                                verbose=verbose)
 
 
+    return chipSummaryList
 
 
 def pixDFToObjectLabelDict(pixGDF,
