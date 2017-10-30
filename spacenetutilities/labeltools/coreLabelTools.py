@@ -328,6 +328,8 @@ def createAOIName(AOI_Name, AOI_Num,
                   verbose=False,
                   dumpChipListToJSON=True,
                   createSummaryCSVChallenge=False):
+                  objectSrcFile=''):
+
 
     srcImageryList = []
 
@@ -374,7 +376,8 @@ def createAOIName(AOI_Name, AOI_Num,
         #                       ['/path/to/8band_AOI_1.tif, '8band']
         #                        ]
 
-    chipSummaryList = gT.cutChipFromMosaic(srcImageryList, srcVectorFileList, outlineSrc=srcVectorAOIFile,
+    if objectSrcFile=='':
+        chipSummaryList = gT.cutChipFromMosaic(srcImageryList, srcVectorFileList, outlineSrc=srcVectorAOIFile,
                                            outputDirectory=outputDirectory, outputPrefix='',
                                            clipSizeMX=windowSizeMeters, clipSizeMY=windowSizeMeters, clipOverlap=clipOverlap,
                                            minpartialPerc=minpartialPerc, createPix=createPix,
@@ -383,17 +386,15 @@ def createAOIName(AOI_Name, AOI_Num,
                                            verbose=verbose)
 
 
+    else:
+        gdfSrc = gpd.read_file(objectSrcFile)
+        chipSummaryList = gT.cutChipFromRasterCenter(srcImageryList, gdfSrc, srcVectorFileList, outlineSrc=srcVectorAOIFile,
+                                               outputDirectory=outputDirectory, outputPrefix='',
+                                               clipSizeMeters=windowSizeMeters,
+                                               minpartialPerc=minpartialPerc, createPix=createPix,
+                                               baseName='AOI_{}_{}'.format(AOI_Num, AOI_Name),
+                                               verbose=verbose)
 
-    outputCSVSummaryName = 'AOI_{}_{}_{}_{}_solutions.csv'.format(AOI_Num, AOI_Name, csvLabel,featureName)
-
-    if  dumpChipListToJSON:
-        with open(outputCSVSummaryName.replace(".csv", ".json"), 'w') as json_data:
-            json.dump(chipSummaryList, json_data)
-
-    if createSummaryCSVChallenge:
-        createCSVSummaryFile(chipSummaryList, outputCSVSummaryName, rasterChipDirectory='', replaceImageID='',
-                         createProposalsFile=False,
-                         pixPrecision=2)
 
     return chipSummaryList
 
@@ -404,7 +405,9 @@ def pixDFToObjectLabelDict(pixGDF,
                               objectTypeField='',
                               objectPose='Left',
                               objectTruncatedField='',
-                              objectDifficultyField=''):
+                              objectDifficultyField='',
+                           truncatePercent=0,
+                           truncatedPercentField='partialDec'):
 
     dictList = []
     # start object segment
@@ -424,30 +427,39 @@ def pixDFToObjectLabelDict(pixGDF,
             objectDifficulty = 0
         else:
             objectDifficulty = row[objectDifficultyField]
+        includeObject=True
+        if truncatePercent>0:
+            if truncatedPercentField in row:
+                if row[truncatedPercentField]>truncatePercent:
+                    includeObject=True
+                else:
+                    includeObject=False
+            else:
+                includeObject=True
 
 
         # .bounds returns a tuple (minX,minY, maxX maxY)
+        if includeObject:
+            geomBBox = box(*row['geometry'].bounds)
 
-        geomBBox = box(*row['geometry'].bounds)
+            if bboxResize != 1.0:
+                geomBBox = affinity.scale(geomBBox, xfact=bboxResize, yfact=bboxResize)
 
-        if bboxResize != 1.0:
-            geomBBox = affinity.scale(geomBBox, xfact=bboxResize, yfact=bboxResize)
+            xmin, ymin, xmax, ymax = geomBBox.bounds
 
-        xmin, ymin, xmax, ymax = geomBBox.bounds
+            dictEntry = {'objectType': objectType,
+                        'pose': objectPose,
+                        'truncated': objectTruncated,
+                        'difficult': objectDifficulty,
+                        'bndbox': {'xmin': xmin,
+                                   'ymin': ymin,
+                                   'xmax': xmax,
+                                   'ymax': ymax
+                                   },
+                        'geometry': row['geometry'].wkt,
+                        }
 
-        dictEntry = {'objectType': objectType,
-                    'pose': objectPose,
-                    'truncated': objectTruncated,
-                    'difficult': objectDifficulty,
-                    'bndbox': {'xmin': xmin,
-                               'ymin': ymin,
-                               'xmax': xmax,
-                               'ymax': ymax
-                               },
-                    'geometry': row['geometry'].wkt,
-                    }
-
-        dictList.append(dictEntry)
+            dictList.append(dictEntry)
 
     return dictList
 
@@ -456,7 +468,9 @@ def geoDFtoObjectDict(geoGDF,src_meta, bboxResize=1.0,
                       objectTypeField='',
                       objectPose='Left',
                       objectTruncatedField='',
-                      objectDifficultyField=''):
+                      objectDifficultyField='',
+                      truncatePercent=0,
+                      truncatedPercentField='partialDec'):
 
 
     pixGDF = gT.geoDFtoPixDF(geoGDF, src_meta['transform'])
@@ -467,7 +481,9 @@ def geoDFtoObjectDict(geoGDF,src_meta, bboxResize=1.0,
                            objectTypeField=objectTypeField,
                            objectPose=objectPose,
                            objectTruncatedField=objectTruncatedField,
-                           objectDifficultyField=objectDifficultyField)
+                           objectDifficultyField=objectDifficultyField,
+                                            truncatePercent=truncatePercent,
+                                            truncatedPercentField=truncatedPercentField)
 
     return objectDictList
 
@@ -500,7 +516,9 @@ def geoDFtoDict(geoGDF, rasterImageName, src_meta, datasetName='SpaceNet_V2',
                   objectTypeField='',
                   objectPose='Left',
                   objectTruncatedField='',
-                  objectDifficultyField=''
+                  objectDifficultyField='',
+                truncatePercent=0,
+                truncatedPercentField='partialDec'
                   ):
 
     imageDescriptionDict = createRasterSummaryDict(rasterImageName, src_meta, datasetName=datasetName,
@@ -511,7 +529,9 @@ def geoDFtoDict(geoGDF, rasterImageName, src_meta, datasetName='SpaceNet_V2',
                            objectTypeField=objectTypeField,
                            objectPose=objectPose,
                            objectTruncatedField=objectTruncatedField,
-                           objectDifficultyField=objectDifficultyField)
+                           objectDifficultyField=objectDifficultyField,
+                                       truncatePercent=truncatePercent,
+                                       truncatedPercentField=truncatedPercentField)
 
 
     return imageDescriptionDict, objectDictList
@@ -525,7 +545,9 @@ def geoJsontoDict(geoJson, rasterImageName, datasetName='SpaceNet_V2',
                   objectTypeField='',
                   objectPose='Left',
                   objectTruncatedField='',
-                  objectDifficultyField=''
+                  objectDifficultyField='',
+                  truncatePercent=0,
+                  truncatedPercentField='partialDec'
                   ):
     try:
         geoGDF = gpd.read_file(geoJson)
@@ -541,7 +563,9 @@ def geoJsontoDict(geoJson, rasterImageName, datasetName='SpaceNet_V2',
                     objectTypeField=objectTypeField,
                     objectPose=objectPose,
                     objectTruncatedField=objectTruncatedField,
-                    objectDifficultyField=objectDifficultyField
+                    objectDifficultyField=objectDifficultyField,
+                       truncatePercent=truncatePercent,
+                       truncatedPercentField=truncatedPercentField
                     )
 
 
@@ -627,21 +651,30 @@ def createDistanceTransform(rasterSrc, vectorSrc, npDistFileName='', units='pixe
 
 
 def convertGTiffTo8Bit(rasterImageName, outputImageName, outputFormat='GTiff',
-                       minPercent=2,
+                       minPercent=0,
                        maxPercent=98,
                        maxValue=255,
-                       verbose=False):
+                       verbose=False,
+                       bandsToInclude=[]
+                       ):
 
     # Other Format would be JPG
+    if outputFormat.upper() == 'JPG':
+        if not bandsToInclude:
+            bandsToInclude = [0,1,2]
+
+
+
 
 
     with rasterio.open(rasterImageName) as src:
         data = src.read()
         profile = src.profile
 
-    # resize band
-    newData = []
-    # data[bandId,:,:]
+    # Which bands to include in conversion
+    if bandsToInclude:
+        data = data[bandsToInclude]
+
     minBand = np.percentile(data, minPercent)
     maxBand = np.percentile(data, maxPercent)
 
@@ -651,14 +684,10 @@ def convertGTiffTo8Bit(rasterImageName, outputImageName, outputFormat='GTiff',
         print('offset = {}'.format(minBand))
         print('rasterImageName={}'.format(rasterImageName))
     # Clip lower percent of values to Zero
-    #tmpData = data[bandId,:,:].astype('float64', casting='unsafe', copy=False)
+
     data=data.astype('float64', casting='unsafe', copy=False)
-    #np.add(data, -1 * minBand, out=data, casting='unsafe')
     data[data>=maxBand] = maxBand
     data=data*scale_ratio
-    #np.add(data, -1 * minBand, out=data, casting='unsafe')
-    #data[data>=255]=255
-    #newData.append(tmpData)
 
 
     data=data.astype('uint8', casting='unsafe', copy=False)

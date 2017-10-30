@@ -47,7 +47,7 @@ if __name__ == '__main__':
         srcGDF = gpd.read_file(srcGeoJson)
         srcGDF['AOI']=AOI_Name
 
-        spaceNetAWSLocation = os.path.join('spacenet-dataset', AOI_Name, 'srcData')
+        spaceNetAWSLocation = os.path.join('spacenet-dataset', AOI_Name, 'srcData', 'rasterData')
         srcGDF['AWSLocation'] = [os.path.join(spaceNetAWSLocation, x) for x in srcGDF['location']]
         srcGDF['fill-opacity']=fillOpacity
         srcGDF['fill']=AOI_DICT['aoi_color']

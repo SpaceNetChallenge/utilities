@@ -7,11 +7,11 @@ if __name__ == '__main__':
 
 
     parser = argparse.ArgumentParser(description='Process SrcData for Region into small chips')
-    parser.add_argument("srcRasterList", help="csv file with a row for each raster,"
+    parser.add_argument("--srcRasterList", help="csv file with a row for each raster,"
                                               "each row will have the following format:"
                                               "path/to/raster.vrt, rasterDescripiton "
                                               "i.e, path/to/AOI_#_Num_3band.vrt, 3band ")
-    parser.add_argument("geoJsonList", help="csv file with path/to/vector_buildings.geojson, vectorDescription"
+    parser.add_argument("--geoJsonList", help="csv file with path/to/vector_buildings.geojson, vectorDescription"
                                               "i.e, path/to/AOI_#_buildings.geojson, buildings")
 
     parser.add_argument("--srcOutline", help="Vector Area describing extent of labeled area"
@@ -26,7 +26,7 @@ if __name__ == '__main__':
                         help="set the dimensions of the square image in meters  "
                              "Default is 200m",
                         type=int,
-                        default=200)
+                        default=100)
     parser.add_argument("--AOI_Name",
                         help="AOI City Name i.e. RIO",
                         default='TEST')
@@ -66,6 +66,10 @@ if __name__ == '__main__':
 
     # outputDirectory Base Location
 
+    args.srcRasterList = '/Users/dlindenbaum/dataStorage/rioBurst/srcRasterList_tmp.txt'
+    args.geoJsonList = '/Users/dlindenbaum/dataStorage/rioBurst/srcVectorList_tmp.txt'
+    args.outputDirectory = '/Users/dlindenbaum/dataStorage/rioBurst/processFiles4'
+    args.objectVectorFile = '/Users/dlindenbaum/cosmiQGit/rioBurstProcessing/data/056222702010_01_assembly_nadir13_airplanes_renamed_poly.shp'
 
     AOI_Name = args.AOI_Name
     AOI_Num = args.AOI_Num
