@@ -327,7 +327,7 @@ def createAOIName(AOI_Name, AOI_Num,
                   featureName='Buildings',
                   verbose=False,
                   dumpChipListToJSON=True,
-                  createSummaryCSVChallenge=False):
+                  createSummaryCSVChallenge=False,
                   objectSrcFile=''):
 
 
