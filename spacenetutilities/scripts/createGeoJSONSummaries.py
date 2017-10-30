@@ -3,6 +3,12 @@ import os
 import pandas as pd
 from spacenetutilities.labeltools import coreLabelTools
 
+
+pixSize = {'AOI_2_Vegas': 0.000002700000000,
+           'AOI_3_Paris':0.000002700000000,
+           'AOI_4_Shanghai': 0.000002700000000,
+           'AOI_5_Khartoum': 0.000002700000000}
+
 if __name__ == '__main__':
 
 
