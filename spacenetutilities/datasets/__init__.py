@@ -56,4 +56,3 @@ def get_train_tile_index(dataset):
         msg = "The dataset '{data}' is not available".format(data=dataset)
         raise ValueError(msg)
 
-    
