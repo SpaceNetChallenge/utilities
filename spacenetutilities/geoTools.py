@@ -335,39 +335,45 @@ def createUTMTransform(polyGeom, srcCrs="+proj=longlat +datum=WGS84 +no_defs"):
 
 
     polyCentroid = polyGeomWGS.centroid
-    utm_zone = gT.utm_getZone(polyCentroid.x)
-    is_northern = gT.utm_isNorthern(polyCentroid.y)
+    utm_zone = utm_getZone(polyCentroid.x)
+    is_northern = utm_isNorthern(polyCentroid.y)
     if is_northern:
         directionIndicator = '+north'
     else:
         directionIndicator = '+south'
 
     print('utm zone = {}'.format(utm_zone))
+
+    utm_crs = "+proj=utm +zone={} {} +ellps=WGS84 +datum=WGS84 +units=m +no_defs".format(utm_zone,
+                                                                                        directionIndicator)
     projectTO_UTM = partial(
         pyproj.transform,
         pyproj.Proj(srcCrs),  #Proj(proj='latlong',datum='WGS84')
-        pyproj.Proj("+proj=utm +zone={} {} +ellps=WGS84 +datum=WGS84 +units=m +no_defs".format(utm_zone,
-                                                                                               directionIndicator))
+        pyproj.Proj(utm_crs)
     )
 
 
     projectTO_SrcCRS = partial(
         pyproj.transform,
-        pyproj.Proj("+proj=utm +zone={} {} +ellps=WGS84 +datum=WGS84 +units=m +no_defs".format(utm_zone,
-                                                                                               directionIndicator)
-                    ),
+        pyproj.Proj(utm_crs),
         pyproj.Proj(srcCrs)  # Proj(proj='latlong',datum='WGS84')
 
     )
-    utm_cs = "+proj=utm +zone={} {} +ellps=WGS84 +datum=WGS84 +units=m +no_defs".format(utm_zone,
-                                                                                               directionIndicator)
 
-    return projectTO_UTM,  projectTO_SrcCRS, utm_cs
+    return projectTO_UTM,  projectTO_SrcCRS, utm_crs
 
 def transformGeomToUTM(geom, srcCrs="+proj=longlat +datum=WGS84 +no_defs"):
     projectTO_UTM, projectTO_Src, utm_cs = createUTMTransform(geom, srcCrs=srcCrs)
 
     return shapely.ops.transform(projectTO_UTM, geom)
+
+def projectGDFToUTM(gdf, srcCrs="+proj=longlat +datum=WGS84 +no_defs"):
+    #calculate first Features centroid
+    srcCentroid = gdf.geometry.values[0].centroid
+    projectTO_UTM, projectTO_Src, utm_crs = createUTMTransform(srcCentroid, srcCrs=gdf.crs)
+    gdf_projected = gdf.to_crs(utm_crs)
+
+    return gdf_projected
 
 def getRasterExtent(srcImage):
     'returns srcImage.transform which is an Affine Object'
@@ -481,6 +487,7 @@ def clipShapeFile(geoDF, outputFileName, polyToCut, minpartialPerc=0.0, geomType
     #cutGeoDF = geoDF.loc[geoDF.intersection(polyToCut).area/geoDF['origarea'] > minpartialPerc].copy()
         cutGeoDF['truncated'] = (cutGeoDF['partialDec']!=1.0).astype(int)
     else:
+        cutGeoDF = cutGeoDF[cutGeoDF.geom_type != "GeometryCollection"]
         cutGeoDF['partialDec']=1
         cutGeoDF['truncated']=0
 
