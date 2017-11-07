@@ -1,4 +1,4 @@
-from spacenetutilities.labeltools import coreLabelTools
+from spacenetutilities.labeltools import geojsonPrepTools
 import json
 import glob
 import argparse
@@ -12,7 +12,7 @@ if __name__ == '__main__':
                         default='noid')
 
     args = parser.parse_args()
-    coreLabelTools.removeIdinGeoJSONFolder(args.geojsonFolder,
+    geojsonPrepTools.removeIdinGeoJSONFolder(args.geojsonFolder,
                                            args.geojsonIDModifierer)
 
 
