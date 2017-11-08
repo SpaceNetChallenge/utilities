@@ -1,4 +1,4 @@
-from spacenetutilities import labeltools as lT
+from spacenetutilities.labeltools import coreLabelTools as lT
 import os
 import glob
 import argparse
@@ -22,6 +22,9 @@ if __name__ == "__main__":
     parser.add_argument("-strip", "--stripOutFromGeoJson", type=str,
                         help="string delimited")
     parser.add_argument("--DontstripFirstUnderScore", action="store_false")
+    parser.add_argument("--compType", "--compType", type=str,
+                        help="What Competition type",
+                        default='buildings')
     args = parser.parse_args()
 
     rasterDirectory = args.imgDir
@@ -76,6 +79,7 @@ if __name__ == "__main__":
     lT.createCSVSummaryFile(chipSummaryList, outputCSVFileName,
                             replaceImageID=rasterPrefix+"_",
                             createProposalsFile=createProposalFile,
-                            pixPrecision=args.pixelPrecision)
+                            pixPrecision=args.pixelPrecision,
+                            competitionType=args.compType)
 
     print("finished")
