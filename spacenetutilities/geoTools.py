@@ -211,6 +211,23 @@ def pixDFtoGeoDF(pixDF, affineObject=[], input_raster='', gdal_geomTransform=[])
 
     return geoDF
 
+def geoJsonToPixDF(geoVectorName,
+                   rasterName='',
+                   affineObject=[],
+                   gdal_geomTransform=[],
+                   pixPrecision=2,
+                   verbose=False):
+
+    try:
+        geoDF = gpd.read_file(geoVectorName)
+        pixDF = geoDFtoPixDF(geoDF, input_raster=rasterName, affineObject=affineObject, gdal_geomTransform=gdal_geomTransform)
+    except:
+        if verbose:
+            print('Empty GeoJson = {}'.format(geoVectorName))
+        pixDF = gpd.GeoDataFrame(geometry=[])
+
+    return pixDF
+
 
 def returnBoundBox(xCenter, yCenter, pixDim, affineObject=[], input_raster='', gdal_geomTransform=[], pixelSpace=False):
 
