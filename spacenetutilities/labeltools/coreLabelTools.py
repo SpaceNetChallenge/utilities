@@ -181,10 +181,28 @@ def createRasterFromGeoJson(srcGeoJson,
     return srcGDF
 
 def createCSVSummaryFile(chipSummaryList, outputFileName, rasterChipDirectory='', replaceImageID='',
-                         createProposalsFile=False,
+                         createProposalsFile=False, competitionType='buildings',
                          pixPrecision=2):
 
+    if competitionType=="buildings":
+        createCSVSummaryFileBuildings(chipSummaryList, outputFileName, rasterChipDirectory=rasterChipDirectory,
+                                      replaceImageID=replaceImageID,
+                                      createProposalsFile=createProposalsFile,
+                                      competitionType=competitionType,
+                                      pixPrecision=pixPrecision)
+    else:
+        createCSVSummaryFileRoads(chipSummaryList, outputFileName, rasterChipDirectory=rasterChipDirectory,
+                                      replaceImageID=replaceImageID,
+                                      createProposalsFile=createProposalsFile,
+                                      competitionType=competitionType,
+                                      pixPrecision=pixPrecision)
 
+    return 1
+
+
+def createCSVSummaryFileBuildings(chipSummaryList, outputFileName, rasterChipDirectory='', replaceImageID='',
+                         createProposalsFile=False, competitionType='buildings',
+                         pixPrecision=2):
     with open(outputFileName, 'w') as csvfile:
         writerTotal = csv.writer(csvfile, delimiter=',', lineterminator='\n')
         if createProposalsFile:
@@ -197,6 +215,7 @@ def createCSVSummaryFile(chipSummaryList, outputFileName, rasterChipDirectory=''
             print(chipName)
             geoVectorName = chipSummary['geoVectorName']
             #pixVectorName = chipSummary['pixVectorName']
+            ## ToDo Replace with new geoDF version
             buildingList = gT.convert_wgs84geojson_to_pixgeojson(geoVectorName,
                                                                  os.path.join(rasterChipDirectory, chipName),
                                                                  pixPrecision=pixPrecision)
@@ -220,6 +239,46 @@ def createCSVSummaryFile(chipSummaryList, outputFileName, rasterChipDirectory=''
                                           'POLYGON EMPTY', 'POLYGON EMPTY'])
 
     return 1
+
+def createCSVSummaryFileRoads(chipSummaryList, outputFileName, rasterChipDirectory='', replaceImageID='',
+                         createProposalsFile=False, competitionType='roads',
+                         pixPrecision=1):
+
+    with open(outputFileName, 'w') as csvfile:
+        writerTotal = csv.writer(csvfile, delimiter=',', lineterminator='\n')
+        if createProposalsFile:
+            writerTotal.writerow(['ImageId', 'WKT_Pix'])
+        else:
+            writerTotal.writerow(['ImageId', 'WKT_Pix'])
+
+        for chipSummary in chipSummaryList:
+            chipName = chipSummary['chipName']
+            print(chipName)
+            geoVectorName = chipSummary['geoVectorName']
+            #pixVectorName = chipSummary['pixVectorName']
+            roadsList = gT.geoJsonToPixDF(geoVectorName,
+                                    rasterName=os.path.join(rasterChipDirectory, chipName),
+                                    affineObject=[],
+                                    gdal_geomTransform=[],
+                                    pixPrecision=2)
+
+            if len(roadsList) > 0:
+                for idx, road in roadsList.iterrows():
+                    imageId = os.path.basename(chipName).replace(replaceImageID, "")
+                    # stripOut Potential Z Geometry
+                    tmpGeom = LineString([np.round(xy[0:2], pixPrecision) for xy in list(road['geometry'].coords)])
+                    if createProposalsFile:
+                        writerTotal.writerow([imageId, tmpGeom.wkt])
+                    else:
+                        writerTotal.writerow([imageId, tmpGeom.wkt])
+
+            else:
+                imageId = os.path.splitext(os.path.basename(chipName))[0].replace(replaceImageID, "")
+                if createProposalsFile:
+                    writerTotal.writerow([imageId, 'LineString EMPTY'])
+                else:
+                    writerTotal.writerow([imageId, 'LineString EMPTY'])
+
 
 def createCSVSummaryFileFromJsonList(geoJsonList, outputFileName, chipnameList=[],
                                      input='Geo',
