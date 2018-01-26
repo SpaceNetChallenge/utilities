@@ -1017,24 +1017,43 @@ def explodeGeoPandasFrame(inGDF):
 #     return outGDF
 
 
-def createBufferGeoPandas(inGDF, bufferDistanceMeters=5, bufferRoundness=1, projectToUTM=True):
+def createBufferGeoPandas(inGDF, bufferDistanceMeters=5, bufferRoundness=1, projectToUTM=True,
+                         bufferMuliplierField='',
+                         disolveClassField='',
+                         debug=False):
     # Calculate CenterLine
     ## Define Buffer Constraints
 
 
     # Transform gdf Roadlines into UTM so that Buffer makes sense
     if projectToUTM:
-        tmpGDF = osmnx.project_gdf(inGDF)
+        tmpGDF = projectGDFToUTM(inGDF, srcCrs=inGDF.crs)
     else:
         tmpGDF = inGDF
 
     gdf_utm_buffer = tmpGDF
 
     # perform Buffer to produce polygons from Line Segments
-    gdf_utm_buffer['geometry'] = tmpGDF.buffer(bufferDistanceMeters,
-                                                bufferRoundness)
-
-    gdf_utm_dissolve = gdf_utm_buffer.dissolve(by='class')
+    if bufferMuliplierField=='':
+        gdf_utm_buffer['geometry'] = tmpGDF.buffer(bufferDistanceMeters,
+                                                    bufferRoundness)
+    else:
+        geomList = []
+        for idx, row in tmpGDF.iterrows():
+            if debug:
+                print("bufferMultiplierrow == ")
+                print(row[bufferMuliplierField])
+                print(bufferDistanceMeters)
+            bufferDistanceMetersFinal = bufferDistanceMeters*float(row[bufferMuliplierField])
+            tmpGeom = row['geometry'].buffer(bufferDistanceMetersFinal, bufferRoundness)
+            geomList.append(tmpGeom)
+        gdf_utm_buffer['geometry'] = geomList
+        
+    if disolveClassField != '':
+        gdf_utm_dissolve = gdf_utm_buffer.dissolve(by=disolveClassField)
+    else:
+        gdf_utm_dissolve = gdf_utm_buffer
+        
     gdf_utm_dissolve.crs = gdf_utm_buffer.crs
 
     if projectToUTM:

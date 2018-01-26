@@ -154,13 +154,53 @@ def createRasterFromGeoJson(srcGeoJson,
                             srcRasterFileName,
                             outRasterFileName,
                             burnValue=255,
-                            burnValueField=''):
+                            burnValueField='',
+                           bufferSizeM=0,
+                           bufferMuliplierField=''):
+    
+    try: 
+        srcGDF = gpd.read_file(srcGeoJson)
 
-    srcGDF = gpd.read_file(srcGeoJson)
-    if burnValueField == '':
-        featureList = ((geom, value) for geom, value in zip(srcGDF.geometry, burnValue))
+        if bufferSizeM!=0:
+            srcGDF = gT.createBufferGeoPandas(srcGDF,
+                                              bufferDistanceMeters=bufferSizeM,
+                                              projectToUTM=True,
+                                              bufferMuliplierField=bufferMuliplierField
+                                             )
+    except:
+        print('empty geojson')
+        srcGDF = gpd.GeoDataFrame(geometry=[])
+        
+        
+    
+    
+    
+    
+    
+    createRasterFromGDF(srcGDF,
+                       srcRasterFileName=srcRasterFileName,
+                       outRasterFileName=outRasterFileName,
+                       burnValue=burnValue,
+                       burnValueField=burnValueField)
+    
+    return srcGDF
+
+
+
+def createRasterFromGDF(srcGDF, 
+                        srcRasterFileName,  
+                        outRasterFileName,
+                        burnValue=255, 
+                        burnValueField=''
+                       ):
+    
+    if list(srcGDF.geometry):
+        if burnValueField == '':
+            featureList = ((geom, int(burnValue)) for geom in srcGDF.geometry)
+        else:
+            featureList = ((geom, int(value)) for geom, value in zip(srcGDF.geometry, srcGDF[burnValueField]))
     else:
-        featureList = ((geom, value) for geom, value in zip(srcGDF.geometry, srcGDF[burnValueField]))
+        featureList = []
 
     with rasterio.open(srcRasterFileName) as rst:
         meta = rst.meta.copy()
@@ -170,11 +210,15 @@ def createRasterFromGeoJson(srcGeoJson,
         with rasterio.open(
                 outRasterFileName, 'w',
                 **meta) as dst:
-
-
-            burned = features.rasterize(shapes=featureList,
-                                        out=rst.shape,
-                                        transform=rst.transform)
+            
+            if featureList:
+                print(featureList)
+                burned = features.rasterize(shapes=featureList,
+                                            out_shape=rst.shape,
+                                            transform=rst.transform
+                                           )
+            else:
+                burned = np.empty(rst.shape, dtype='uint8')
 
             dst.write(burned, indexes=1)
 
