@@ -134,7 +134,8 @@ def createGeoJSONFromRaster(geoJsonFileName,
                             transformAffineObject,
                             crs,
                             maskValue=0,
-                            fieldName="rasterVal"):
+                            fieldName="rasterVal",
+                            conf=None):
 
     featureGenerator = polygonize(imageArray,
                                   transformAffineObject,
@@ -143,6 +144,8 @@ def createGeoJSONFromRaster(geoJsonFileName,
     featureGDF = createGDFfromShapes(featureGenerator,
                                      fieldName=fieldName)
     featureGDF.crs = crs
+    if conf is None:
+        featureGDF['conf'] = 1
 
     gT.exporttogeojson(geoJsonFileName, featureGDF)
 
