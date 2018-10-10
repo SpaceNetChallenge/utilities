@@ -131,15 +131,14 @@ def createGDFfromShapes(featureGenerator, fieldName='rasterVal'):
 
 def createGeoJSONFromRaster(geoJsonFileName,
                             imageArray,
-                            geom,
+                            transformAffineObject,
                             crs,
                             maskValue=0,
                             fieldName="rasterVal"):
 
     featureGenerator = polygonize(imageArray,
-                                  geom,
-                                  maskValue=maskValue,
-                                  fieldName=fieldName)
+                                  transformAffineObject,
+                                  maskValue=maskValue)
 
     featureGDF = createGDFfromShapes(featureGenerator,
                                      fieldName=fieldName)
@@ -157,8 +156,8 @@ def createRasterFromGeoJson(srcGeoJson,
                             burnValueField='',
                            bufferSizeM=0,
                            bufferMuliplierField=''):
-    
-    try: 
+
+    try:
         srcGDF = gpd.read_file(srcGeoJson)
 
         if bufferSizeM!=0:
@@ -170,30 +169,30 @@ def createRasterFromGeoJson(srcGeoJson,
     except:
         print('empty geojson')
         srcGDF = gpd.GeoDataFrame(geometry=[])
-        
-        
-    
-    
-    
-    
-    
+
+
+
+
+
+
+
     createRasterFromGDF(srcGDF,
                        srcRasterFileName=srcRasterFileName,
                        outRasterFileName=outRasterFileName,
                        burnValue=burnValue,
                        burnValueField=burnValueField)
-    
+
     return srcGDF
 
 
 
-def createRasterFromGDF(srcGDF, 
-                        srcRasterFileName,  
+def createRasterFromGDF(srcGDF,
+                        srcRasterFileName,
                         outRasterFileName,
-                        burnValue=255, 
+                        burnValue=255,
                         burnValueField=''
                        ):
-    
+
     if list(srcGDF.geometry):
         if burnValueField == '':
             featureList = ((geom, int(burnValue)) for geom in srcGDF.geometry)
@@ -210,7 +209,7 @@ def createRasterFromGDF(srcGDF,
         with rasterio.open(
                 outRasterFileName, 'w',
                 **meta) as dst:
-            
+
             if featureList:
                 print(featureList)
                 burned = features.rasterize(shapes=featureList,
