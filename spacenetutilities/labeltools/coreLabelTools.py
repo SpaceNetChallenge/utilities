@@ -13,9 +13,11 @@ from rasterio import features
 from rasterio.rio import convert
 from shapely.geometry.polygon import Polygon
 from shapely.geometry.linestring import LineString
-from shapely.geometry import shape, box
+from shapely.geometry import shape, box, mapping
+from shapely.wkt import dumps
 from shapely import affinity
 from spacenetutilities import geoTools as gT
+import numpy as np
 
 def evaluateLineStringPlane(geom, label='Airplane'):
 
@@ -231,6 +233,7 @@ def createCSVSummaryFile(chipSummaryList, outputFileName, rasterChipDirectory=''
                          pixPrecision=2):
 
     if competitionType=="buildings":
+        print("test")
         createCSVSummaryFileBuildings(chipSummaryList, outputFileName, rasterChipDirectory=rasterChipDirectory,
                                       replaceImageID=replaceImageID,
                                       createProposalsFile=createProposalsFile,
@@ -245,6 +248,11 @@ def createCSVSummaryFile(chipSummaryList, outputFileName, rasterChipDirectory=''
 
     return 1
 
+def reduceGeomPrecision(geom, precision=2):
+    geojson = mapping(geom)
+    geojson['coordinates'] = np.round(np.array(geojson['coordinates']), precision)
+    
+    return shape(geojson)
 
 def createCSVSummaryFileBuildings(chipSummaryList, outputFileName, rasterChipDirectory='', replaceImageID='',
                          createProposalsFile=False, competitionType='buildings',
@@ -258,23 +266,33 @@ def createCSVSummaryFileBuildings(chipSummaryList, outputFileName, rasterChipDir
 
         for chipSummary in chipSummaryList:
             chipName = chipSummary['chipName']
-            print(chipName)
             geoVectorName = chipSummary['geoVectorName']
-            #pixVectorName = chipSummary['pixVectorName']
-            ## ToDo Replace with new geoDF version
-            buildingList = gT.convert_wgs84geojson_to_pixgeojson(geoVectorName,
-                                                                 os.path.join(rasterChipDirectory, chipName),
-                                                                 pixPrecision=pixPrecision)
+            imageId = chipSummary['imageId']
 
+            buildingList = gT.geoJsonToPixDF(geoVectorName,
+                                    rasterName=os.path.join(rasterChipDirectory, chipName),
+                                    affineObject=[],
+                                    gdal_geomTransform=[],
+                                    pixPrecision=pixPrecision)
+            
+            buildingList = gT.explodeGeoPandasFrame(buildingList)
+
+            
             if len(buildingList) > 0:
-                for building in buildingList:
-                    imageId = os.path.basename(building['ImageId']).replace(replaceImageID, "")
+                for idx, building in buildingList.iterrows():
+                    
+                    tmpGeom = dumps(building.geometry, rounding_precision=pixPrecision)
+                    
                     if createProposalsFile:
-                        writerTotal.writerow([imageId, building['BuildingId'],
-                                              building['polyPix'], 1])
+                        writerTotal.writerow([imageId, 
+                                              idx,
+                                              tmpGeom, 
+                                              1])
                     else:
-                        writerTotal.writerow([imageId, building['BuildingId'],
-                                          building['polyPix'], building['polyGeo']])
+                        writerTotal.writerow([imageId, 
+                                              idx,
+                                              tmpGeom, 
+                                              1])
             else:
                 imageId = os.path.splitext(os.path.basename(chipName))[0].replace(replaceImageID, "")
                 if createProposalsFile:
@@ -306,7 +324,7 @@ def createCSVSummaryFileRoads(chipSummaryList, outputFileName, rasterChipDirecto
                                     rasterName=os.path.join(rasterChipDirectory, chipName),
                                     affineObject=[],
                                     gdal_geomTransform=[],
-                                    pixPrecision=2)
+                                    pixPrecision=pixPrecision)
 
             if len(roadsList) > 0:
                 for idx, road in roadsList.iterrows():
