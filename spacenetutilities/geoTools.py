@@ -4,6 +4,7 @@ import subprocess
 import math
 import geopandas as gpd
 import shapely
+from shapely import wkt
 import rasterio as rio
 import affine as af
 import pandas as pd
@@ -19,11 +20,6 @@ from tqdm import tqdm
 import rtree
 from functools import partial
 
-#try:
-#    import centerline
-#
-#except:
-#    print("rtree not installed, Will break evaluation code")
 
 
 def import_summary_geojson(geojsonfilename, removeNoBuildings=True):
@@ -99,12 +95,12 @@ def readwktcsv(csv_path):
     df = pd.read_csv(csv_path)
     crs = {}
     if 'PolygonWKT_Geo' in df.columns:
-        geometry = [shapely.wkt.loads(x) for x in df['PolygonWKT_Geo'].values]
+        geometry = [wkt.loads(x) for x in df['PolygonWKT_Geo'].values]
         crs = {'init': 'epsg:4326'}
     elif 'PolygonWKT_Pix' in df.columns:
-        geometry = [shapely.wkt.loads(x) for x in df['PolygonWKT_Pix'].values]
+        geometry = [wkt.loads(x) for x in df['PolygonWKT_Pix'].values]
     elif 'PolygonWKT' in df.columns:
-        geometry = [shapely.wkt.loads(x) for x in df['PolygonWKT'].values]
+        geometry = [wkt.loads(x) for x in df['PolygonWKT'].values]
 
     else:
         print(
@@ -123,6 +119,8 @@ def exporttogeojson(geojsonfilename, geo_df):
            geojsonfilename -- geojson to create
            geo_df          -- geopandas dataframe
 
+        returns geojsonfilename as string
+
     """
 
     #geo_df.to_file(geojsonfilename, driver='GeoJSON', crs=from_epsg(4326))
@@ -132,11 +130,17 @@ def exporttogeojson(geojsonfilename, geo_df):
 
 
 def geomGeo2geomPixel(geom, affineObject=[], input_raster='', gdal_geomTransform=[]):
-    # This function transforms a shapely geometry in geospatial coordinates into pixel coordinates
-    # geom must be shapely geometry
-    # affineObject = rasterio.open(input_raster).affine
-    # gdal_geomTransform = gdal.Open(input_raster).GetGeoTransform()
-    # input_raster is path to raster to gather georectifcation information
+    """This function transforms a shapely geometry in geospatial coordinates into pixel coordinates
+
+           Keyword arguments:
+           geom -- Shapely Geometry to Convert
+           affineObject (Optional) -- rasterio.open(input_raster).affine
+           gdal_geomTransform (Optional) -- gdal.Open(input_raster).GetGeoTransform()
+           input_raster (Optional) -- Path to raster to gather georectifcation information
+
+        returns shapely geometry
+
+    """
     if not affineObject:
         if input_raster != '':
             affineObject = rio.open(input_raster).affine
