@@ -294,7 +294,7 @@ def createCSVSummaryFileBuildings(chipSummaryList, outputFileName, rasterChipDir
                                               tmpGeom, 
                                               1])
             else:
-                imageId = os.path.splitext(os.path.basename(chipName))[0].replace(replaceImageID, "")
+                imageId = chipSummary['imageId']
                 if createProposalsFile:
                     writerTotal.writerow([imageId, -1,
                                       'POLYGON EMPTY', 1])
