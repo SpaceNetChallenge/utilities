@@ -229,16 +229,16 @@ def createRasterFromGDF(srcGDF,
     return srcGDF
 
 def createCSVSummaryFile(chipSummaryList, outputFileName, rasterChipDirectory='', replaceImageID='',
-                         createProposalsFile=False, competitionType='buildings',
+                         createProposalsFile=False, competitionType='buildings',occluded_flag=False,
                          pixPrecision=2):
 
     if competitionType=="buildings":
-        print("test")
         createCSVSummaryFileBuildings(chipSummaryList, outputFileName, rasterChipDirectory=rasterChipDirectory,
                                       replaceImageID=replaceImageID,
                                       createProposalsFile=createProposalsFile,
                                       competitionType=competitionType,
-                                      pixPrecision=pixPrecision)
+                                      pixPrecision=pixPrecision,
+                                     occluded_flag=occluded_flag)
     else:
         createCSVSummaryFileRoads(chipSummaryList, outputFileName, rasterChipDirectory=rasterChipDirectory,
                                       replaceImageID=replaceImageID,
@@ -255,14 +255,19 @@ def reduceGeomPrecision(geom, precision=2):
     return shape(geojson)
 
 def createCSVSummaryFileBuildings(chipSummaryList, outputFileName, rasterChipDirectory='', replaceImageID='',
-                         createProposalsFile=False, competitionType='buildings',
+                         createProposalsFile=False, competitionType='buildings', occluded_flag=False,
                          pixPrecision=2):
     with open(outputFileName, 'w') as csvfile:
         writerTotal = csv.writer(csvfile, delimiter=',', lineterminator='\n')
         if createProposalsFile:
             writerTotal.writerow(['ImageId', 'BuildingId', 'PolygonWKT_Pix', 'Confidence'])
         else:
-            writerTotal.writerow(['ImageId', 'BuildingId', 'PolygonWKT_Pix', 'PolygonWKT_Geo'])
+            if occluded_flag:
+                writerTotal.writerow(['ImageId', 'BuildingId', 'PolygonWKT_Pix', 'Occluded'])
+
+            else:
+                writerTotal.writerow(['ImageId', 'BuildingId', 'PolygonWKT_Pix', 'PolygonWKT_Geo'])
+                
 
         for chipSummary in chipSummaryList:
             chipName = chipSummary['chipName']
@@ -276,7 +281,6 @@ def createCSVSummaryFileBuildings(chipSummaryList, outputFileName, rasterChipDir
                                     pixPrecision=pixPrecision)
             
             buildingList = gT.explodeGeoPandasFrame(buildingList)
-
             
             if len(buildingList) > 0:
                 for idx, building in buildingList.iterrows():
@@ -289,18 +293,37 @@ def createCSVSummaryFileBuildings(chipSummaryList, outputFileName, rasterChipDir
                                               tmpGeom, 
                                               1])
                     else:
-                        writerTotal.writerow([imageId, 
-                                              idx,
-                                              tmpGeom, 
-                                              1])
+                        if occluded_flag:
+                            if building['name'] == 'Occlusion':
+                                writerTotal.writerow([imageId, 
+                                                      idx,
+                                                      tmpGeom, 
+                                                      1])
+                            else:
+                                writerTotal.writerow([imageId, 
+                                                      idx,
+                                                      tmpGeom, 
+                                                      1])
+                            
+                        else:
+                            
+                            ##TODO reimplement GeoCreation
+                            writerTotal.writerow([imageId, 
+                                                  idx,
+                                                  tmpGeom, 
+                                                  1])
             else:
                 imageId = chipSummary['imageId']
                 if createProposalsFile:
                     writerTotal.writerow([imageId, -1,
-                                      'POLYGON EMPTY', 1])
+                                      'POLYGON EMPTY', 0])
                 else:
-                    writerTotal.writerow([imageId, -1,
-                                          'POLYGON EMPTY', 'POLYGON EMPTY'])
+                    if occluded_flag:
+                        writerTotal.writerow([imageId, -1,
+                                              'POLYGON EMPTY', 0])
+                    else:
+                        writerTotal.writerow([imageId, -1,
+                                              'POLYGON EMPTY', "POLYGON EMPTY"])
 
     return 1
 
