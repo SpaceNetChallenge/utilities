@@ -19,8 +19,8 @@ install:
   - conda update -q conda
   # Useful for debugging any issues with conda
   - conda info -a
-  - conda create --yes -n ml-export python=$TRAVIS_PYTHON_VERSION pip=18.1
-  - source activate ml-export
+  - conda create --yes -n utils python=$TRAVIS_PYTHON_VERSION pip=18.1
+  - source activate utils
   - conda install -c conda-forge rtree pytest
   - conda info -a
   - pip install -e .[test]
@@ -28,7 +28,7 @@ install:
   - conda list
 # command to run tests
 script:
-  - source activate ml-export & pytest --cov=./ #--log-level=INFO #--cov=./# or py.test for Python versions 3.5 and below
+  - source activate ml-utils & pytest --cov=./ #--log-level=INFO #--cov=./# or py.test for Python versions 3.5 and below
   - codecov
 
 
