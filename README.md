@@ -1,4 +1,5 @@
-# SpaceNet Utilities
+# SpaceNet Utilities [![Build Status](https://travis-ci.com/SpaceNetChallenge/utilities.svg?branch=dev)](https://travis-ci.com/SpaceNetChallenge/utilities)
+
 
 This repository has three python packages, geoTools and evalTools and labelTools. The geoTools packages is intended to assist in the preprocessing of [SpaceNet](https://spacenetchallenge.github.io/) satellite imagery data corpus hosted on [SpaceNet on AWS](https://aws.amazon.com/public-datasets/spacenet/) to a format that is consumable by machine learning algorithms. 
 The evalTools package is used to evaluate the effectiveness of object detection algorithms using ground truth.
