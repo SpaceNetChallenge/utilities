@@ -20,7 +20,7 @@ This is version 3.0 and has been updated with more capabilities to allow for com
 #    INSTALL_REQUIRES = []
 #else:
 
-INSTALL_REQUIRES = ['geopandas', 'numpy', 'rtree', 'scipy', 'osmnx', 'affine', 'tqdm', 'rasterio>=1.0a9', 'opencv-python'
+INSTALL_REQUIRES = ['geopandas', 'numpy', 'rtree', 'scipy', 'osmnx', 'affine', 'tqdm', 'rasterio>=1.0a9', 'opencv-python',
                     'pillow']
 
 extra_reqs = {
