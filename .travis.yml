@@ -19,15 +19,15 @@ install:
   - conda update -q conda
   # Useful for debugging any issues with conda
   - conda info -a
-  - conda create --yes -n utils python=$TRAVIS_PYTHON_VERSION pip=18.1
+  - conda create --yes -n utils python=$TRAVIS_PYTHON_VERSION pip
   - source activate utils
-  - conda install -c conda-forge rtree pytest codecov
+  - conda install -c conda-forge rtree pytest codecov pytest-cov
   - conda info -a
   - pip install -e .[test]
   - conda info -a
   - conda list
 # command to run tests
 script:
-  - source activate utils & pytest #--log-level=INFO #--cov=./# or py.test for Python versions 3.5 and below
+  - source activate utils & pytest --cov=./ #--log-level=INFO #--cov=./# or py.test for Python versions 3.5 and below
   - source activate utils & codecov
 
