@@ -21,7 +21,7 @@ install:
   - conda info -a
   - conda create --yes -n utils python=$TRAVIS_PYTHON_VERSION pip=18.1
   - source activate utils
-  - conda install -c conda-forge rtree pytest
+  - conda install -c conda-forge rtree pytest codecov
   - conda info -a
   - pip install -e .[test]
   - conda info -a
@@ -29,6 +29,5 @@ install:
 # command to run tests
 script:
   - source activate utils & pytest #--log-level=INFO #--cov=./# or py.test for Python versions 3.5 and below
-  - codecov
-
+  - source activate utils & codecov
 
