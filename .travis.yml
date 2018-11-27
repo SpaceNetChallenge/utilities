@@ -28,7 +28,7 @@ install:
   - conda list
 # command to run tests
 script:
-  - source activate ml-utils & pytest --cov=./ #--log-level=INFO #--cov=./# or py.test for Python versions 3.5 and below
+  - source activate utils & pytest #--log-level=INFO #--cov=./# or py.test for Python versions 3.5 and below
   - codecov
 
 
