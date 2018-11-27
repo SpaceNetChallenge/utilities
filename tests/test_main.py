@@ -7,11 +7,37 @@ def test_import_geoTools():
 
     from spacenetutilities import geoTools
 
-#def test_import_evalTools():
+    return 0
 
-#    from spacenetutilities import evalTools
+def test_import_evalTools():
 
-#def test_import_dataTools():
-#    from spacenetutilities import dataTools
+    from spacenetutilities import evalTools
 
-#    return 0
+    return 0
+
+def test_import_dataTools():
+    from spacenetutilities import dataTools
+
+    return 0
+
+def test_import_osmttools():
+
+    from spacenetutilities.osmtools import coreosmtools
+
+    return 0
+
+def test_import_labeltools():
+
+    from spacenetutilities.labeltools import coreLabelTools
+    from spacenetutilities.labeltools import darkNetLabel
+    from spacenetutilities.labeltools import geojsonPrepTools
+    from spacenetutilities.labeltools import pascalVOCLabel
+    from spacenetutilities.labeltools import sbdLabel
+    from spacenetutilities.labeltools import tfRecordLabel
+
+    return 0
+
+def test_import_inferencetools():
+
+    from spacenetutilities.inferenceTools import coreInferenceTools
+
