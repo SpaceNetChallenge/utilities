@@ -143,7 +143,7 @@ def geomGeo2geomPixel(geom, affineObject=[], input_raster='', gdal_geomTransform
     """
     if not affineObject:
         if input_raster != '':
-            affineObject = rio.open(input_raster).affine
+            affineObject = rio.open(input_raster).transform
         else:
             affineObject = af.Affine.from_gdal(gdal_geomTransform)
 
@@ -168,7 +168,7 @@ def geomPixel2geomGeo(geom, affineObject=[], input_raster='', gdal_geomTransform
     # input_raster is path to raster to gather georectifcation information
     if not affineObject:
         if input_raster != '':
-            affineObject = rio.open(input_raster).affine
+            affineObject = rio.open(input_raster).transform
         else:
             affineObject = af.Affine.from_gdal(gdal_geomTransform)
 
@@ -221,9 +221,9 @@ def geoJsonToPixDF(geoVectorName,
                    gdal_geomTransform=[],
                    pixPrecision=2,
                    verbose=False):
-
     try:
         geoDF = gpd.read_file(geoVectorName)
+        geoDF.head()
         pixDF = geoDFtoPixDF(geoDF, input_raster=rasterName, affineObject=affineObject, gdal_geomTransform=gdal_geomTransform)
     except:
         if verbose:
