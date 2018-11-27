@@ -23,6 +23,9 @@ This is version 3.0 and has been updated with more capabilities to allow for com
 INSTALL_REQUIRES = ['geopandas', 'numpy', 'rtree', 'scipy', 'osmnx', 'affine', 'tqdm', 'rasterio>=1.0a9',
                     'pillow']
 
+extra_reqs = {
+    'test': ['mock', 'pytest', 'pytest-cov', 'codecov']}
+
 # get all data dirs in the datasets module
 data_files = []
 
