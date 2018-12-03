@@ -12,6 +12,4 @@ affine
 pyproj
 osmnx
 centerline
-
-
-
+sphinx
