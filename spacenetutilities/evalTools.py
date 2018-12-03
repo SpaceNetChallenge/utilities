@@ -1,5 +1,5 @@
 import numpy as np
-import geoTools as gT
+from spacenetutilities import geoTools as gT
 from shapely.geometry import mapping
 import fiona
 from tqdm import tqdm

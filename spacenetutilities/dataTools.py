@@ -1,4 +1,4 @@
-import geoTools as gT
+from spacenetutilities import geoTools as gT
 import numpy as np
 import os
 #from osgeo import ogr
