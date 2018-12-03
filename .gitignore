@@ -103,3 +103,8 @@ venv.bak/
 # mypy
 .mypy_cache/
 
+# really annoying macOS files
+.DS_Store
+
+# equally annoying python files
+spacenetutilities.egg-info/
