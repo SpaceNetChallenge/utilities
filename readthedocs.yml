@@ -1,14 +1,5 @@
-<<<<<<< HEAD
 python:
   version: 3
   pip_install: true
 conda:
   file: environment.yml
-=======
-build:
-  image: nrweir/snutils_rtd:latest
-
-python:
-  version: 3.5
-  setup_py_install: true
->>>>>>> ce1f913... adding readthedocs.yml config file
