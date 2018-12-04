@@ -1,0 +1,29 @@
+name: spacenetutilities
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - affine=2.2.1
+  - descartes=1.1.0
+  - gdal=2.3.2
+  - geopandas=0.4.0
+  - geopy=1.17.0
+  - hdf5=1.10.4
+  - libgdal=2.3.2
+  - matplotlib=2.2.3
+  - ncurses=6.1
+  - numpy=1.15.1
+  - osmnx=0.8.2
+  - pillow=5.3.0
+  - rasterio=1.0.10
+  - rtree=0.8.3
+  - scipy=1.1.0
+  - shapely=1.6.4
+  - pip:
+    - chardet==3.0.4
+    - cloudpickle==0.6.1
+    - dask==1.0.0
+    - imageio==2.4.1
+    - numpydoc==0.8.0
+    - pywavelets==1.0.1
+    - scikit-image>=0.14
