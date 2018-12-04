@@ -26,4 +26,4 @@ dependencies:
     - imageio==2.4.1
     - numpydoc==0.8.0
     - pywavelets==1.0.1
-    - scikit-image==0.15.dev0
+    - scikit-image>=0.14
