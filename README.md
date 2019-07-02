@@ -1,4 +1,4 @@
-This repository is no longer being updated. Future development of code tools for geospatial machine learning analysis will be done at https://github.com/cosmiq/solaris.
+# This repository is no longer being updated. Future development of code tools for geospatial machine learning analysis will be done at https://github.com/cosmiq/solaris.
 
 # SpaceNet Utilities
 
