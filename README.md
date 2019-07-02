@@ -1,5 +1,6 @@
+This repository is no longer being updated. Future development of code tools for geospatial machine learning analysis will be done at https://github.com/cosmiq/solaris.
+
 # SpaceNet Utilities
-__!! Important note: we strongly encourage new users to install spacenetutilities from the [spacenetV3 branch of this repository](https://github.com/SpaceNetChallenge/utilities/tree/spacenetV3), as this version is more up-to-date. A full update to the master branch is coming soon !!__
 
 This repository has two python packages, geoTools and evalTools. The geoTools packages is intended to assist in the preprocessing of [SpaceNet](https://spacenetchallenge.github.io/) satellite imagery data corpus hosted on [SpaceNet on AWS](https://aws.amazon.com/public-datasets/spacenet/) to a format that is consumable by machine learning algorithms. The evalTools package is used to evaluate the effectiveness of object detection algorithms using ground truth.
 This is version 2.0 and has been updated with more capabilities to 
